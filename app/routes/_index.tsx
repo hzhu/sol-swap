@@ -306,52 +306,35 @@ export default function Index() {
   useEffect(() => {
     providerRef.current = getProvider();
   }, []);
+  /*
+  {
+    tokenAccounts: {},
+    sellAmount: "",
+    buyAmount: "",
+    quoteResponse: {}
+    
+  }
+  
+  */
 
-  const { publicKey, connected, ...rest } = useWallet();
+  const [nativeBalance, setNativeBalance] = useState<any>();
+  const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
   const [tokenAccounts, setTokenAccounts] = useState<any>(null);
-
-  useEffect(() => {
-    if (!publicKey) return;
-
-    async function run() {
-      if (!publicKey) return;
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-        publicKey,
-        {
-          programId: TOKEN_PROGRAM_ID,
-        }
-      );
-
-      setTokenAccounts(tokenAccounts);
-    }
-
-    run();
-  }, [connection, publicKey]);
-
-  const [inputAmount, setInputAmount] = useState<string>("");
-  const [outputAmount, setOutputAmount] = useState<string>("");
-
-  const debouncedInputAmount: string = useDebounce(inputAmount, 500);
-
-  // 1 usdc = 1.000000
-
+  const [sellAmount, setSellAmount] = useState<string>("");
+  const [buyAmount, setBuyAmount] = useState<string>("");
+  const debouncedSellAmount: string = useDebounce(sellAmount, 500);
   const [quoteResponse, setQuoteResponse] = useState<any>(null);
-
   const [isSwapping, setIsSwapping] = useState<boolean>(false);
-
   const [transactionReceipt, setTransactionReceipt] = useState<string>("");
-
   const [sellFieldState, setSellFieldState] = useState({
     selectedKey: "So11111111111111111111111111111111111111112",
     inputValue: "SOL",
   });
-
   const [buyFieldState, setBuyFieldState] = useState({
     selectedKey: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     inputValue: "USDC",
   });
-
   const [selectedSellToken, setSelectedSellToken] = useState({
     address: "So11111111111111111111111111111111111111112",
     chainId: 101,
@@ -363,7 +346,6 @@ export default function Index() {
     tags: ["old-registry"],
     extensions: { coingeckoId: "wrapped-solana" },
   });
-
   const [selectedBuyToken, setSelectedBuyToken] = useState({
     address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     chainId: 101,
@@ -375,54 +357,6 @@ export default function Index() {
     tags: ["old-registry", "solana-fm"],
     extensions: { coingeckoId: "usd-coin" },
   });
-
-  useEffect(() => {
-    if (!debouncedInputAmount) return;
-    if (debouncedInputAmount.toString() === "") return;
-    if (Number(debouncedInputAmount) === 0) return;
-    if (!selectedBuyToken || !selectedSellToken) return;
-
-    const baseUrl = "https://quote-api.jup.ag/v6/quote";
-
-    // TODO: get decimals from token list
-    const amountInSmallestUnit =
-      Number(debouncedInputAmount) * Math.pow(10, selectedSellToken.decimals);
-
-    const params = {
-      inputMint: sellFieldState.selectedKey,
-      outputMint: buyFieldState.selectedKey,
-      amount: amountInSmallestUnit.toString(),
-      slippageBps: "25",
-      onlyDirectRoutes: "false",
-      asLegacyTransaction: "false",
-      experimentalDexes: "Jupiter LO",
-    };
-
-    const url = new URL(baseUrl);
-    url.search = new URLSearchParams(params).toString();
-
-    async function fetchQuote() {
-      const response = await fetch(url.href);
-      const data = await response.json();
-      setQuoteResponse(data);
-
-      setOutputAmount(
-        lamportsToTokenUnits(
-          Number(data.outAmount),
-          selectedBuyToken.decimals
-        ).toString()
-      );
-    }
-
-    fetchQuote();
-  }, [
-    debouncedInputAmount,
-    buyFieldState,
-    selectedBuyToken,
-    selectedSellToken,
-    sellFieldState,
-  ]);
-
   const [items, setItems] = useState([
     {
       address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
@@ -448,7 +382,70 @@ export default function Index() {
     },
   ]);
 
-  const [nativeBalance, setNativeBalance] = useState<any>();
+  useEffect(() => {
+    if (!publicKey) return;
+
+    async function run() {
+      if (!publicKey) return;
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+        publicKey,
+        {
+          programId: TOKEN_PROGRAM_ID,
+        }
+      );
+
+      setTokenAccounts(tokenAccounts);
+    }
+
+    run();
+  }, [connection, publicKey]);
+
+  useEffect(() => {
+    if (!debouncedSellAmount) return;
+    if (debouncedSellAmount.toString() === "") return;
+    if (Number(debouncedSellAmount) === 0) return;
+    if (!selectedBuyToken || !selectedSellToken) return;
+
+    const baseUrl = "https://quote-api.jup.ag/v6/quote";
+
+    // TODO: get decimals from token list
+    const amountInSmallestUnit =
+      Number(debouncedSellAmount) * Math.pow(10, selectedSellToken.decimals);
+
+    const params = {
+      inputMint: sellFieldState.selectedKey,
+      outputMint: buyFieldState.selectedKey,
+      amount: amountInSmallestUnit.toString(),
+      slippageBps: "25",
+      onlyDirectRoutes: "false",
+      asLegacyTransaction: "false",
+      experimentalDexes: "Jupiter LO",
+    };
+
+    const url = new URL(baseUrl);
+    url.search = new URLSearchParams(params).toString();
+
+    async function fetchQuote() {
+      const response = await fetch(url.href);
+      const data = await response.json();
+      setQuoteResponse(data);
+
+      setBuyAmount(
+        lamportsToTokenUnits(
+          Number(data.outAmount),
+          selectedBuyToken.decimals
+        ).toString()
+      );
+    }
+
+    fetchQuote();
+  }, [
+    debouncedSellAmount,
+    buyFieldState,
+    selectedBuyToken,
+    selectedSellToken,
+    sellFieldState,
+  ]);
 
   useEffect(() => {
     async function run() {
@@ -488,14 +485,10 @@ export default function Index() {
     return undefined;
   }, [tokenAccounts, sellFieldState]);
 
-  console.log(sellBalanceSPL, "<--lokzokzokozk");
-
   const balanceUi =
     selectedSellToken.address === "So11111111111111111111111111111111111111112"
       ? nativeBalance
       : sellBalanceSPL;
-
-  console.log(balanceUi?.uiAmountString, "<--yoz");
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
@@ -572,9 +565,9 @@ export default function Index() {
           type="text"
           name="sol"
           placeholder="0.0"
-          value={inputAmount}
+          value={sellAmount}
           onChange={(e) => {
-            setInputAmount(e.target.value.trim());
+            setSellAmount(e.target.value.trim());
           }}
         />
         <div className="text-xs">Balance: {balanceUi?.uiAmountString}</div>
@@ -649,7 +642,7 @@ export default function Index() {
           type="text"
           htmlFor="buy-input"
           name="buy-input"
-          value={outputAmount}
+          value={buyAmount}
           disabled
           onChange={() => {}}
         />
@@ -691,8 +684,8 @@ export default function Index() {
               console.error(err);
             } finally {
               // reset
-              setInputAmount("");
-              setOutputAmount("");
+              setSellAmount("");
+              setBuyAmount("");
               setQuoteResponse(null);
               setIsSwapping(false);
             }
