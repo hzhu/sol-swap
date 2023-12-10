@@ -8,9 +8,9 @@ import {
   Popover,
 } from "react-aria-components";
 import type { MetaFunction } from "@remix-run/node";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Buffer } from "buffer";
-import { VersionedTransaction } from "@solana/web3.js";
+import { VersionedTransaction, PublicKey } from "@solana/web3.js";
 import { Form } from "@remix-run/react";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
@@ -307,7 +307,7 @@ export default function Index() {
     providerRef.current = getProvider();
   }, []);
 
-  const { publicKey, connected } = useWallet();
+  const { publicKey, connected, ...rest } = useWallet();
   const { connection } = useConnection();
   const [tokenAccounts, setTokenAccounts] = useState<any>(null);
 
@@ -448,6 +448,55 @@ export default function Index() {
     },
   ]);
 
+  const [nativeBalance, setNativeBalance] = useState<any>();
+
+  useEffect(() => {
+    async function run() {
+      if (publicKey) {
+        const balance = await connection.getBalance(
+          new PublicKey(publicKey.toString())
+        );
+
+        console.log(lamportsToTokenUnits(balance, 9), "<--balance");
+
+        const uiAmount = lamportsToTokenUnits(balance, 9);
+
+        setNativeBalance({
+          uiAmount,
+          uiAmountString: uiAmount.toString(),
+          amount: balance.toString(),
+          decimals: 9,
+        });
+      }
+    }
+    if (publicKey) {
+      run();
+    }
+  }, [connection, publicKey]);
+
+  const sellBalanceSPL = useMemo(() => {
+    if (tokenAccounts) {
+      const [balance] = tokenAccounts.value.filter((v) => {
+        return v.account.data.parsed.info.mint === sellFieldState.selectedKey;
+      });
+
+      if (balance) {
+        return balance.account.data.parsed.info.tokenAmount;
+      }
+    }
+
+    return undefined;
+  }, [tokenAccounts, sellFieldState]);
+
+  console.log(sellBalanceSPL, "<--lokzokzokozk");
+
+  const balanceUi =
+    selectedSellToken.address === "So11111111111111111111111111111111111111112"
+      ? nativeBalance
+      : sellBalanceSPL;
+
+  console.log(balanceUi?.uiAmountString, "<--yoz");
+
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
       <h1>solswap</h1>
@@ -528,6 +577,7 @@ export default function Index() {
             setInputAmount(e.target.value.trim());
           }}
         />
+        <div className="text-xs">Balance: {balanceUi?.uiAmountString}</div>
         <br />
         <br />
         <br />

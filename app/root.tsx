@@ -36,14 +36,16 @@ export const links: LinksFunction = () => [
     : []),
 ];
 
+const rpcs = [
+  "https://crimson-wider-field.solana-mainnet.quiknode.pro/ae46bf182ab5e4d0d797cfcf1222a368a8cafb47/",
+  "https://solana-mainnet.g.alchemy.com/v2/25BADfV1u8vd9ygnc_gIyNUFgV40EJz7",
+];
+
 export default function App() {
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
   const [{ wallets, endpoint }] = useState(() => {
-    const network = WalletAdapterNetwork.Mainnet;
-
     // You can also provide a custom RPC endpoint.
-    const endpoint =
-      "https://crimson-wider-field.solana-mainnet.quiknode.pro/ae46bf182ab5e4d0d797cfcf1222a368a8cafb47/";
+    const endpoint = rpcs[1];
 
     const wallets = [
       /**
