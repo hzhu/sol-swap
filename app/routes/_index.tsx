@@ -9,7 +9,6 @@ import {
 } from "react-aria-components";
 import type { MetaFunction } from "@remix-run/node";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Buffer } from "buffer";
 import { VersionedTransaction, PublicKey } from "@solana/web3.js";
 import { Form } from "@remix-run/react";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
@@ -26,6 +25,49 @@ declare global {
     };
   }
 }
+
+type Context = {
+  slot: number;
+};
+
+/**
+ * RPC Response with extra contextual information
+ */
+type RpcResponseAndContext<T> = {
+  /** response context */
+  context: Context;
+  /** response value */
+  value: T;
+};
+
+type AccountInfo<T> = {
+  /** `true` if this account's data contains a loaded program */
+  executable: boolean;
+  /** Identifier of the program that owns the account */
+  owner: PublicKey;
+  /** Number of lamports assigned to the account */
+  lamports: number;
+  /** Optional data assigned to the account */
+  data: T;
+  /** Optional rent epoch info for account */
+  rentEpoch?: number;
+};
+
+type ParsedAccountData = {
+  /** Name of the program that owns this account */
+  program: string;
+  /** Parsed account data */
+  parsed: any;
+  /** Space used by account data */
+  space: number;
+};
+
+type X = RpcResponseAndContext<
+  Array<{
+    pubkey: PublicKey;
+    account: AccountInfo<ParsedAccountData>;
+  }>
+>;
 
 export const meta: MetaFunction = () => {
   return [
@@ -64,13 +106,12 @@ export default function Index() {
     quoteResponse: {}
     
   }
-  
   */
 
   const [nativeBalance, setNativeBalance] = useState<any>();
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
-  const [tokenAccounts, setTokenAccounts] = useState<any>(null);
+  const [tokenAccounts, setTokenAccounts] = useState<X>();
   const [sellAmount, setSellAmount] = useState<string>("");
   const [buyAmount, setBuyAmount] = useState<string>("");
   const debouncedSellAmount: string = useDebounce(sellAmount, 500);
@@ -87,7 +128,6 @@ export default function Index() {
     logoURI:
       "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
     tags: ["old-registry"],
-    extensions: { coingeckoId: "wrapped-solana" },
   });
   const [selectedBuyToken, setSelectedBuyToken] = useState({
     address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
@@ -98,7 +138,6 @@ export default function Index() {
     logoURI:
       "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
     tags: ["old-registry", "solana-fm"],
-    extensions: { coingeckoId: "usd-coin" },
   });
   const [items, setItems] = useState([
     {
@@ -120,6 +159,7 @@ export default function Index() {
       logoURI:
         "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
       tags: ["old-registry"],
+      extensions: { coingeckoId: "wrapped-solana" },
     },
   ]);
 
@@ -356,10 +396,10 @@ export default function Index() {
             </ListBox>
           </Popover>
         </ComboBox>
-        <label id="buy-input">buy</label>
+        <label htmlFor="buy-input">buy</label>
         <input
           type="text"
-          htmlFor="buy-input"
+          id="buy-input"
           name="buy-input"
           value={buyAmount}
           disabled
@@ -373,41 +413,41 @@ export default function Index() {
           onClick={async () => {
             console.log(quoteResponse);
             return;
-            if (!quoteResponse) return;
+            // if (!quoteResponse) return;
 
-            try {
-              setIsSwapping(true);
-              // get serialized transactions for the swap
-              const { swapTransaction } = await (
-                await fetch("https://quote-api.jup.ag/v6/swap", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    quoteResponse,
-                    userPublicKey: publicKey,
-                    wrapAndUnwrapSol: true,
-                  }),
-                })
-              ).json();
+            // try {
+            //   setIsSwapping(true);
+            //   // get serialized transactions for the swap
+            //   const { swapTransaction } = await (
+            //     await fetch("https://quote-api.jup.ag/v6/swap", {
+            //       method: "POST",
+            //       headers: { "Content-Type": "application/json" },
+            //       body: JSON.stringify({
+            //         quoteResponse,
+            //         userPublicKey: publicKey,
+            //         wrapAndUnwrapSol: true,
+            //       }),
+            //     })
+            //   ).json();
 
-              const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
+            //   const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
 
-              const versionedTx =
-                VersionedTransaction.deserialize(swapTransactionBuf);
+            //   const versionedTx =
+            //     VersionedTransaction.deserialize(swapTransactionBuf);
 
-              const receipt = await providerRef.current?.signAndSendTransaction(
-                versionedTx
-              );
-              receipt && setTransactionReceipt(receipt.signature);
-            } catch (err) {
-              console.error(err);
-            } finally {
-              // reset
-              setSellAmount("");
-              setBuyAmount("");
-              setQuoteResponse(null);
-              setIsSwapping(false);
-            }
+            //   const receipt = await providerRef.current?.signAndSendTransaction(
+            //     versionedTx
+            //   );
+            //   receipt && setTransactionReceipt(receipt.signature);
+            // } catch (err) {
+            //   console.error(err);
+            // } finally {
+            //   // reset
+            //   setSellAmount("");
+            //   setBuyAmount("");
+            //   setQuoteResponse(null);
+            //   setIsSwapping(false);
+            // }
           }}
         >
           {isSwapping ? "Swapping..." : "Swap"}
