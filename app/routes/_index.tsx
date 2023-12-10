@@ -12,8 +12,9 @@ import { useEffect, useRef, useState } from "react";
 import { Buffer } from "buffer";
 import { VersionedTransaction } from "@solana/web3.js";
 import { Form } from "@remix-run/react";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import type { PhantomWallet } from "~/types";
 import { tokenList } from "~/tokenList";
 
@@ -25,9 +26,6 @@ declare global {
     };
   }
 }
-
-const RPC_URL =
-  "https://crimson-wider-field.solana-mainnet.quiknode.pro/ae46bf182ab5e4d0d797cfcf1222a368a8cafb47/";
 
 export const meta: MetaFunction = () => {
   return [
@@ -298,17 +296,6 @@ const filteredList = [
   },
 ];
 
-const url =
-  "https://quote-api.jup.ag/v6/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=1000000&slippageBps=30&onlyDirectRoutes=false&asLegacyTransaction=false&experimentalDexes=Jupiter%20LO";
-
-// inputMint
-// outputMint
-// amount=1000000
-// slippageBps=30
-// onlyDirectRoutes=false
-// asLegacyTransaction=false
-// experimentalDexes=Jupiter%20LO";
-
 function lamportsToTokenUnits(lamports: number, decimals: number) {
   return lamports / Math.pow(10, decimals);
 }
@@ -321,6 +308,26 @@ export default function Index() {
   }, []);
 
   const { publicKey, connected } = useWallet();
+  const { connection } = useConnection();
+  const [tokenAccounts, setTokenAccounts] = useState<any>(null);
+
+  useEffect(() => {
+    if (!publicKey) return;
+
+    async function run() {
+      if (!publicKey) return;
+      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
+        publicKey,
+        {
+          programId: TOKEN_PROGRAM_ID,
+        }
+      );
+
+      setTokenAccounts(tokenAccounts);
+    }
+
+    run();
+  }, [connection, publicKey]);
 
   const [inputAmount, setInputAmount] = useState<string>("");
   const [outputAmount, setOutputAmount] = useState<string>("");

@@ -39,10 +39,11 @@ export const links: LinksFunction = () => [
 export default function App() {
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
   const [{ wallets, endpoint }] = useState(() => {
-    const network = WalletAdapterNetwork.Devnet;
+    const network = WalletAdapterNetwork.Mainnet;
 
     // You can also provide a custom RPC endpoint.
-    const endpoint = clusterApiUrl(network);
+    const endpoint =
+      "https://crimson-wider-field.solana-mainnet.quiknode.pro/ae46bf182ab5e4d0d797cfcf1222a368a8cafb47/";
 
     const wallets = [
       /**
