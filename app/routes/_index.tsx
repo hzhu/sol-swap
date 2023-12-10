@@ -290,7 +290,15 @@ export default function Index() {
           selectedKey={selectedSellToken.address}
           onSelectionChange={(id) => {
             const selectedItem = items.find((o) => o.address === id);
-            if (selectedItem) {
+            if (!selectedItem) return;
+
+            // if selected item is the same as the buy token, swap them
+            if (selectedItem?.address === selectedBuyToken.address) {
+              setSelectedBuyToken(selectedSellToken);
+              setSelectedSellToken(selectedBuyToken);
+              setSellInputValue(selectedBuyToken.symbol);
+              setBuyInputValue(selectedSellToken.symbol);
+            } else {
               setSelectedSellToken(selectedItem);
               setSellInputValue(selectedItem.symbol);
             }
@@ -358,8 +366,18 @@ export default function Index() {
           selectedKey={selectedBuyToken.address}
           onSelectionChange={(id) => {
             const selectedItem = items.find((o) => o.address === id);
-            selectedItem && setSelectedBuyToken(selectedItem);
-            selectedItem && setBuyInputValue(selectedItem.symbol);
+            if (!selectedItem) return;
+
+            // if selected item is the same as the buy token, swap them
+            if (selectedItem?.address === selectedSellToken.address) {
+              setSelectedBuyToken(selectedSellToken);
+              setSelectedSellToken(selectedBuyToken);
+              setSellInputValue(selectedBuyToken.symbol);
+              setBuyInputValue(selectedSellToken.symbol);
+            } else {
+              selectedItem && setSelectedBuyToken(selectedItem);
+              selectedItem && setBuyInputValue(selectedItem.symbol);
+            }
           }}
         >
           <Label>Chose a buy token</Label>
