@@ -336,22 +336,57 @@ export default function Index() {
 
   const [transactionReceipt, setTransactionReceipt] = useState<string>("");
 
+  const [sellFieldState, setSellFieldState] = useState({
+    selectedKey: "So11111111111111111111111111111111111111112",
+    inputValue: "SOL",
+  });
+
+  const [buyFieldState, setBuyFieldState] = useState({
+    selectedKey: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    inputValue: "USDC",
+  });
+
+  const [selectedSellToken, setSelectedSellToken] = useState({
+    address: "So11111111111111111111111111111111111111112",
+    chainId: 101,
+    decimals: 9,
+    name: "Wrapped SOL",
+    symbol: "SOL",
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+    tags: ["old-registry"],
+    extensions: { coingeckoId: "wrapped-solana" },
+  });
+
+  const [selectedBuyToken, setSelectedBuyToken] = useState({
+    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    chainId: 101,
+    decimals: 6,
+    name: "USD Coin",
+    symbol: "USDC",
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+    tags: ["old-registry", "solana-fm"],
+    extensions: { coingeckoId: "usd-coin" },
+  });
+
   useEffect(() => {
     if (!debouncedInputAmount) return;
     if (debouncedInputAmount.toString() === "") return;
     if (Number(debouncedInputAmount) === 0) return;
+    if (!selectedBuyToken || !selectedSellToken) return;
 
     const baseUrl = "https://quote-api.jup.ag/v6/quote";
 
-    const solDecimals = 9; // SOL uses 9 decimal places
+    // TODO: get decimals from token list
     const amountInSmallestUnit =
-      Number(debouncedInputAmount) * Math.pow(10, solDecimals);
+      Number(debouncedInputAmount) * Math.pow(10, selectedSellToken.decimals);
 
     const params = {
-      inputMint: "So11111111111111111111111111111111111111112",
-      outputMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+      inputMint: sellFieldState.selectedKey,
+      outputMint: buyFieldState.selectedKey,
       amount: amountInSmallestUnit.toString(),
-      slippageBps: "30",
+      slippageBps: "25",
       onlyDirectRoutes: "false",
       asLegacyTransaction: "false",
       experimentalDexes: "Jupiter LO",
@@ -368,34 +403,19 @@ export default function Index() {
       setOutputAmount(
         lamportsToTokenUnits(
           Number(data.outAmount),
-          6 // for usdc duh
+          selectedBuyToken.decimals
         ).toString()
       );
     }
 
     fetchQuote();
-  }, [debouncedInputAmount]);
-
-  const [inputToken, setInputToken] = useState(
-    "So11111111111111111111111111111111111111112"
-  );
-
-  const [inputInputVal, setInputInputVal] = useState({
-    address: "So11111111111111111111111111111111111111112",
-    chainId: 101,
-    decimals: 9,
-    name: "Wrapped SOL",
-    symbol: "SOL",
-    logoURI:
-      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-    tags: ["old-registry"],
-    extensions: { coingeckoId: "wrapped-solana" },
-  });
-
-  let [fieldState, setFieldState] = useState({
-    selectedKey: "So11111111111111111111111111111111111111112",
-    inputValue: "SOL",
-  });
+  }, [
+    debouncedInputAmount,
+    buyFieldState,
+    selectedBuyToken,
+    selectedSellToken,
+    sellFieldState,
+  ]);
 
   const [items, setItems] = useState([
     {
@@ -424,91 +444,159 @@ export default function Index() {
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <ComboBox
-        items={items}
-        onInputChange={(value: string) => {
-          setFieldState((prevState) => ({
-            inputValue: value,
-            selectedKey: value === "" ? "" : prevState.selectedKey,
-          }));
-
-          // filter the large list then set state for filtered list
-          const filteredList = tokenList
-            .filter((token) => {
-              return token.symbol.toLowerCase().includes(value.toLowerCase());
-            })
-            .slice(0, 7);
-          setItems(filteredList);
-        }}
-        inputValue={fieldState.inputValue}
-        selectedKey={fieldState.selectedKey}
-        onSelectionChange={(id) => {
-          setFieldState({
-            inputValue:
-              filteredList.find((o) => o.address === id)?.symbol ?? "",
-            selectedKey: id as string,
-          });
-        }}
-      >
-        <Label>Chose a sell token</Label>
-        <div>
-          <Input className="px-3 py-2" />
-          <Button>▼</Button>
-        </div>
-        <Popover>
-          <ListBox>
-            {(item: {
-              address: string;
-              chainId: number;
-              decimals: number;
-              name: string;
-              symbol: string;
-              logoURI: string;
-              tags: string[];
-              extensions: any;
-            }) => (
-              <ListBoxItem
-                key={item.address}
-                id={item.address}
-                className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
-              >
-                <img
-                  src={item.logoURI}
-                  alt={item.symbol}
-                  style={{ width: "1.5rem", height: "1.5rem" }}
-                />
-                <span>{item.symbol}</span>
-              </ListBoxItem>
-            )}
-          </ListBox>
-        </Popover>
-      </ComboBox>
       <h1>solswap</h1>
-      <div>Pub key: {publicKey ? `✅ ${publicKey}` : "❌"}</div>
-
       <Form>
-        <label>sol</label>
+        <ComboBox
+          items={items}
+          onInputChange={(value: string) => {
+            setSellFieldState((prevState) => ({
+              inputValue: value,
+              selectedKey: value === "" ? "" : prevState.selectedKey,
+            }));
+
+            // filter the large list then set state for filtered list
+            const filteredList = tokenList
+              .filter((token) => {
+                return token.symbol.toLowerCase().includes(value.toLowerCase());
+              })
+              .slice(0, 7);
+            setItems(filteredList);
+          }}
+          inputValue={sellFieldState.inputValue}
+          selectedKey={sellFieldState.selectedKey}
+          onSelectionChange={(id) => {
+            const selectedItem = filteredList.find((o) => o.address === id);
+            setSelectedSellToken(selectedItem);
+            setSellFieldState({
+              inputValue: selectedItem?.symbol || "",
+              selectedKey: id as string,
+            });
+          }}
+        >
+          <Label>Chose a sell token</Label>
+          <div>
+            <Input className="px-3 py-2" />
+            <Button>▼</Button>
+          </div>
+          <Popover>
+            <ListBox>
+              {(item: {
+                address: string;
+                chainId: number;
+                decimals: number;
+                name: string;
+                symbol: string;
+                logoURI: string;
+                tags: string[];
+                extensions: any;
+              }) => (
+                <ListBoxItem
+                  key={item.address}
+                  id={item.address}
+                  className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                >
+                  <img
+                    src={item.logoURI}
+                    alt={item.symbol}
+                    style={{ width: "1.5rem", height: "1.5rem" }}
+                  />
+                  <span>{item.symbol}</span>
+                </ListBoxItem>
+              )}
+            </ListBox>
+          </Popover>
+        </ComboBox>
+        <label className="">Sell</label>
         <input
           type="text"
           name="sol"
+          placeholder="0.0"
           value={inputAmount}
           onChange={(e) => {
             setInputAmount(e.target.value.trim());
           }}
         />
-        <label>usdc</label>
+        <br />
+        <br />
+        <br />
+        <ComboBox
+          items={items}
+          onInputChange={(value: string) => {
+            setBuyFieldState((prevState) => ({
+              inputValue: value,
+              selectedKey: value === "" ? "" : prevState.selectedKey,
+            }));
+
+            // filter the large list then set state for filtered list
+            const filteredList = tokenList
+              .filter((token) => {
+                return token.symbol.toLowerCase().includes(value.toLowerCase());
+              })
+              .slice(0, 7);
+            setItems(filteredList);
+          }}
+          inputValue={buyFieldState.inputValue}
+          selectedKey={buyFieldState.selectedKey}
+          onSelectionChange={(id) => {
+            const selectedItem = filteredList.find((o) => o.address === id);
+            selectedItem && setSelectedBuyToken(selectedItem);
+
+            setBuyFieldState({
+              inputValue:
+                filteredList.find((o) => o.address === id)?.symbol ?? "",
+              selectedKey: id as string,
+            });
+          }}
+        >
+          <Label>Chose a buy token</Label>
+          <div>
+            <Input className="px-3 py-2" />
+            <Button>▼</Button>
+          </div>
+          <Popover>
+            <ListBox>
+              {(item: {
+                address: string;
+                chainId: number;
+                decimals: number;
+                name: string;
+                symbol: string;
+                logoURI: string;
+                tags: string[];
+                extensions: any;
+              }) => (
+                <ListBoxItem
+                  key={item.address}
+                  id={item.address}
+                  className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                >
+                  <img
+                    src={item.logoURI}
+                    alt={item.symbol}
+                    style={{ width: "1.5rem", height: "1.5rem" }}
+                  />
+                  <span>{item.symbol}</span>
+                </ListBoxItem>
+              )}
+            </ListBox>
+          </Popover>
+        </ComboBox>
+        <label id="buy-input">buy</label>
         <input
           type="text"
-          name="usdc"
+          htmlFor="buy-input"
+          name="buy-input"
           value={outputAmount}
           disabled
           onChange={() => {}}
         />
+        <br />
+        <br />
         <button
           type="button"
           disabled={!quoteResponse || isSwapping || !connected || !publicKey}
           onClick={async () => {
-            console.log(tokenList);
+            console.log(quoteResponse);
             return;
             if (!quoteResponse) return;
 
