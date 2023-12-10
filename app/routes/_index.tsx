@@ -187,27 +187,23 @@ export default function Index() {
     if (Number(debouncedSellAmount) === 0) return;
     if (!selectedBuyToken || !selectedSellToken) return;
 
-    const baseUrl = "https://quote-api.jup.ag/v6/quote";
-
     // TODO: get decimals from token list
     const amountInSmallestUnit =
       Number(debouncedSellAmount) * Math.pow(10, selectedSellToken.decimals);
 
-    const params = {
-      inputMint: selectedSellToken.address,
-      outputMint: selectedBuyToken.address,
-      amount: amountInSmallestUnit.toString(),
+    const searchParams = new URLSearchParams({
       slippageBps: "25",
       onlyDirectRoutes: "false",
       asLegacyTransaction: "false",
-      experimentalDexes: "Jupiter LO",
-    };
+      inputMint: selectedSellToken.address,
+      outputMint: selectedBuyToken.address,
+      amount: amountInSmallestUnit.toString(),
+    }).toString();
 
-    const url = new URL(baseUrl);
-    url.search = new URLSearchParams(params).toString();
+    const url = `/quote?${searchParams}`;
 
     async function fetchQuote() {
-      const response = await fetch(url.href);
+      const response = await fetch(url);
       const data = await response.json();
       setQuoteResponse(data);
 
