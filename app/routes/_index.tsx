@@ -15,7 +15,6 @@ import { Form } from "@remix-run/react";
 
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { PhantomWallet } from "~/types";
-import { set } from "@project-serum/anchor/dist/cjs/utils/features";
 import { tokenList } from "~/tokenList";
 
 // Extend the Window interface
@@ -449,6 +448,7 @@ export default function Index() {
         <ComboBox
           items={items}
           onInputChange={(value: string) => {
+            console.log(1, value);
             setSellFieldState((prevState) => ({
               inputValue: value,
               selectedKey: value === "" ? "" : prevState.selectedKey,
@@ -466,11 +466,14 @@ export default function Index() {
           selectedKey={sellFieldState.selectedKey}
           onSelectionChange={(id) => {
             const selectedItem = filteredList.find((o) => o.address === id);
-            setSelectedSellToken(selectedItem);
-            setSellFieldState({
-              inputValue: selectedItem?.symbol || "",
-              selectedKey: id as string,
-            });
+            if (selectedItem) {
+              console.log(0, selectedItem);
+              setSelectedSellToken(selectedItem);
+              setSellFieldState({
+                inputValue: selectedItem.symbol,
+                selectedKey: id as string,
+              });
+            }
           }}
         >
           <Label>Chose a sell token</Label>
@@ -491,15 +494,17 @@ export default function Index() {
                 extensions: any;
               }) => (
                 <ListBoxItem
+                  textValue={item.symbol}
                   key={item.address}
                   id={item.address}
-                  className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                  className="flex items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
                 >
                   <img
                     src={item.logoURI}
                     alt={item.symbol}
                     style={{ width: "1.5rem", height: "1.5rem" }}
                   />
+                  &nbsp;
                   <span>{item.symbol}</span>
                 </ListBoxItem>
               )}
@@ -566,6 +571,7 @@ export default function Index() {
                 extensions: any;
               }) => (
                 <ListBoxItem
+                  textValue={item.symbol}
                   key={item.address}
                   id={item.address}
                   className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
