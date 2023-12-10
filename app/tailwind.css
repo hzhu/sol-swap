@@ -1,3 +1,165 @@
 /* @tailwind base; */
 @tailwind components;
 @tailwind utilities;
+
+.react-aria-Menu {
+  --highlight-background: #514d86;
+  --highlight-foreground: white;
+  --separator-color: var(--spectrum-global-color-gray-500);
+  --text-color: var(--spectrum-alias-text-color);
+  --text-color-disabled: var(--spectrum-alias-text-color-disabled);
+
+  max-height: inherit;
+  box-sizing: border-box;
+  overflow: auto;
+  margin: 0;
+  min-width: 150px;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.react-aria-Popover {
+  background: white;
+  box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
+  border-radius: 6px;
+  outline: none;
+
+  &[data-placement="top"] {
+    --origin: translateY(8px);
+  }
+
+  &[data-placement="bottom"] {
+    --origin: translateY(-8px);
+  }
+
+  &[data-entering] {
+    animation: slide 250ms;
+  }
+
+  &[data-exiting] {
+    animation: slide 250ms reverse ease-in;
+  }
+}
+
+@keyframes slide {
+  from {
+    transform: var(--origin);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (forced-colors: active) {
+  .react-aria-Menu {
+    forced-color-adjust: none;
+
+    --highlight-background: Highlight;
+    --highlight-foreground: HighlightText;
+    --separator-color: ButtonBorder;
+    --text-color: ButtonText;
+    --text-color-disabled: GrayText;
+  }
+}
+
+.react-aria-ComboBox {
+  --border-color: var(--spectrum-alias-border-color);
+  --border-color-disabled: var(--spectrum-alias-border-color-disabled);
+  --button-background: slateblue;
+}
+
+/* .react-aria-Input {
+  margin: 0;
+  font-size: 1.072rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.286rem 2rem 0.286rem 0.571rem;
+  vertical-align: middle;
+
+  &[data-focused] {
+    outline: none;
+    border-color: slateblue;
+    box-shadow: 0 0 0 1px slateblue;
+  }
+} */
+
+.react-aria-Button {
+  background: slateblue;
+  color: white;
+  border-radius: 4px;
+  border: none;
+  margin-left: -1.714rem;
+  width: 1.429rem;
+  height: 1.429rem;
+  padding: 0;
+  font-size: 0.857rem;
+}
+
+@layer popover {
+  .react-aria-Popover {
+    width: var(--trigger-width);
+  }
+}
+
+@layer listbox {
+  .react-aria-ListBox {
+    display: block;
+    width: unset;
+    max-height: inherit;
+    min-height: unset;
+    border: none;
+
+    .react-aria-Header {
+      padding-left: 1.571rem;
+    }
+  }
+
+  .react-aria-ListBoxItem {
+    padding: 0.286rem 0.571rem 0.286rem 1.571rem;
+
+    &[data-focus-visible] {
+      box-shadow: unset;
+    }
+
+    &[data-selected] {
+      font-weight: 600;
+      background: unset;
+      color: var(--text-color);
+
+      &::before {
+        content: "✓";
+        content: "✓" / "";
+        alt: " ";
+        position: absolute;
+        top: 4px;
+        left: 4px;
+      }
+
+      &[data-focus-visible] {
+        box-shadow: unset;
+      }
+    }
+
+    &[data-focused],
+    &[data-pressed] {
+      background: var(--highlight-background);
+      color: var(--highlight-foreground);
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .react-aria-ComboBox {
+    --border-color: ButtonBorder;
+    --border-color-disabled: GrayText;
+
+    .react-aria-Button {
+      background: ButtonFace;
+      color: ButtonText;
+      border: 1px solid ButtonBorder;
+    }
+  }
+}
