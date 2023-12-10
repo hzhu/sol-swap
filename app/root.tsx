@@ -8,7 +8,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import React, { FC, useMemo } from "react";
+import React, { FC, useEffect, useMemo, useState } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -31,13 +31,13 @@ export const links: LinksFunction = () => [
 
 export default function App() {
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
-  const network = WalletAdapterNetwork.Devnet;
+  const [{ wallets, endpoint }] = useState(() => {
+    const network = WalletAdapterNetwork.Devnet;
 
-  // You can also provide a custom RPC endpoint.
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    // You can also provide a custom RPC endpoint.
+    const endpoint = clusterApiUrl(network);
 
-  const wallets = useMemo(
-    () => [
+    const wallets = [
       /**
        * Wallets that implement either of these standards will be available automatically.
        *
@@ -51,10 +51,16 @@ export default function App() {
        * in the npm package `@solana/wallet-adapter-wallets`.
        */
       new UnsafeBurnerWalletAdapter(),
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [network]
-  );
+    ];
+
+    return {
+      endpoint,
+      wallets,
+    };
+  });
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
 
   return (
     <html lang="en">
@@ -65,15 +71,22 @@ export default function App() {
         <Links />
       </head>
       <body>
-        <ConnectionProvider endpoint={endpoint}>
-          <WalletProvider wallets={wallets} autoConnect>
-            <WalletModalProvider>
-              <WalletMultiButton />
-              <WalletDisconnectButton />
-              <Outlet />
-            </WalletModalProvider>
-          </WalletProvider>
-        </ConnectionProvider>
+        {wallets && endpoint ? (
+          <ConnectionProvider endpoint={endpoint}>
+            <WalletProvider wallets={wallets} autoConnect>
+              <WalletModalProvider>
+                {isMounted && (
+                  <div style={{ display: "flex", justifyContent: "end" }}>
+                    <WalletMultiButton />
+                    &nbsp;&nbsp;
+                    <WalletDisconnectButton />
+                  </div>
+                )}
+                <Outlet />
+              </WalletModalProvider>
+            </WalletProvider>
+          </ConnectionProvider>
+        ) : null}
         <ScrollRestoration />
         <Scripts />
         <LiveReload />
