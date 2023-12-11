@@ -1,5 +1,5 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction } from "@remix-run/node";
+import type { LinksFunction, MetaFunction } from "@remix-run/node";
 import {
   Links,
   LiveReload,
@@ -13,14 +13,26 @@ import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
-import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { UnsafeBurnerWalletAdapter } from "@solana/wallet-adapter-wallets";
 import {
   WalletModalProvider,
   WalletDisconnectButton,
   WalletMultiButton,
 } from "@solana/wallet-adapter-react-ui";
-import { clusterApiUrl } from "@solana/web3.js";
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "Solana | solswap" },
+    {
+      property: "og:title",
+      content: "Solana | solswap",
+    },
+    {
+      name: "description",
+      content: "The best prices Solana with solswap DEX aggregator",
+    },
+  ];
+};
 
 // Default styles that can be overridden by your app
 // require("@solana/wallet-adapter-react-ui/styles.css");

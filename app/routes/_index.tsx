@@ -10,10 +10,8 @@ import {
   Popover,
   Text,
   Dialog,
-  DialogTrigger,
   Heading,
   Modal,
-  TextField,
 } from "react-aria-components";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -129,7 +127,7 @@ export default function Index() {
   const debouncedSellAmount: string = useDebounce(sellAmount, 500);
   const [quoteResponse, setQuoteResponse] = useState<any>(null);
   const [isSwapping, setIsSwapping] = useState<boolean>(false);
-  const [transactionReceipt, setTransactionReceipt] = useState<string>("x");
+  const [transactionReceipt, setTransactionReceipt] = useState<string>("");
 
   const [selectedSellToken, setSelectedSellToken] = useState({
     address: "So11111111111111111111111111111111111111112",
