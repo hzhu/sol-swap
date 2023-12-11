@@ -269,7 +269,7 @@ export default function Index() {
       <section>
         <h1 className="text-center text-4xl mb-4">solswap</h1>
         <Form>
-          <div className="flex items-center justify-between bg-purple-100 rounded-lg p-4">
+          <div className="flex items-center justify-between bg-purple-100 rounded-tl-lg rounded-tr-lg p-4">
             <div className="mr-12">
               <div className="flex items-center">
                 <img
@@ -377,7 +377,7 @@ export default function Index() {
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton className="" />
           </div>
-          <div className="flex items-center justify-between bg-green-100 rounded-lg p-4">
+          <div className="flex items-center justify-between bg-green-100 rounded-bl-lg rounded-br-lg p-4">
             <div className="mr-12">
               <div className="flex items-center">
                 <img
