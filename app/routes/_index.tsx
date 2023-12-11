@@ -258,226 +258,274 @@ export default function Index() {
   );
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}>
-      <h1>solswap</h1>
-      <Form>
-        <ComboBox
-          // menuTrigger="focus"
-          items={sellItems}
-          onInputChange={(value: string) => {
-            setSellInputValue(value);
-            const filteredList = tokenList.filter((token) => {
-              return token.symbol.toLowerCase().includes(value.toLowerCase());
-            });
-            setSellItems(filteredList.slice(0, 7));
-          }}
-          inputValue={sellInputValue}
-          selectedKey={selectedSellToken.address}
-          onSelectionChange={(id) => {
-            const selectedItem = sellItems.find((o) => o.address === id);
-            if (!selectedItem) return;
-
-            // if selected item is the same as the buy token, swap them
-            if (selectedItem?.address === selectedBuyToken.address) {
-              setSelectedBuyToken(selectedSellToken);
-              setSelectedSellToken(selectedBuyToken);
-              setSellInputValue(selectedBuyToken.symbol);
-              setBuyInputValue(selectedSellToken.symbol);
-            } else {
-              setSelectedSellToken(selectedItem);
-              setSellInputValue(selectedItem.symbol);
-            }
-          }}
-        >
-          <Label>Sell token</Label>
-          <div>
-            <Input className="px-3 py-2" />
-            <Button>🔍</Button>
-          </div>
-          <Text className="text-xs" slot="description">
-            Search any sell token.
-          </Text>
-          <Popover>
-            <ListBox>
-              {(item: {
-                address: string;
-                chainId: number;
-                decimals: number;
-                name: string;
-                symbol: string;
-                logoURI: string;
-                tags: string[];
-                extensions: any;
-              }) => (
-                <ListBoxItem
-                  textValue={item.symbol}
-                  key={item.address}
-                  id={item.address}
-                  className="flex items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
-                >
-                  <img
-                    src={item.logoURI}
-                    alt={item.symbol}
-                    style={{ width: "1.5rem", height: "1.5rem" }}
+    <main
+      style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
+      className="max-w-2xl mx-auto"
+    >
+      <section>
+        <h1>solswap</h1>
+        <Form>
+          <div className="flex items-center justify-between bg-purple-500/50 rounded-lg p-4 mb-3">
+            <div className="mr-12">
+              <div className="flex items-center">
+                <img
+                  className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
+                  src={selectedSellToken.logoURI}
+                  alt="sol"
+                />
+                <div>
+                  <label className="block">You sell:</label>
+                  <input
+                    type="text"
+                    name="sol"
+                    placeholder="0.0"
+                    value={sellAmount}
+                    inputMode="decimal"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    pattern="^[0-9]*[.,]?[0-9]*$"
+                    minLength={1}
+                    maxLength={50}
+                    spellCheck="false"
+                    className="px-3 py-2"
+                    onChange={(e) => {
+                      if (/^[0-9]*[.,]?[0-9]*$/.test(e.target.value)) {
+                        setSellAmount(e.target.value.trim());
+                      }
+                    }}
                   />
-                  &nbsp;
-                  <span>{item.symbol}</span>
-                </ListBoxItem>
-              )}
-            </ListBox>
-          </Popover>
-        </ComboBox>
-        <label className="">Sell amount</label>
-        <input
-          type="text"
-          name="sol"
-          placeholder="0.0"
-          value={sellAmount}
-          inputMode="decimal"
-          autoComplete="off"
-          autoCorrect="off"
-          pattern="^[0-9]*[.,]?[0-9]*$"
-          minLength={1}
-          maxLength={50}
-          spellCheck="false"
-          onChange={(e) => {
-            if (/^[0-9]*[.,]?[0-9]*$/.test(e.target.value)) {
-              setSellAmount(e.target.value.trim());
-            }
-          }}
-        />
-        <div className="text-xs">Balance: {balanceUi?.uiAmountString}</div>
-        <br />
-        <br />
-        <br />
-        <ComboBox
-          items={buyItems}
-          onInputChange={(value: string) => {
-            setBuyInputValue(value);
-            const newItems = tokenList.filter((token) => {
-              return token.symbol.toLowerCase().includes(value.toLowerCase());
-            });
-            setBuyItems(newItems.slice(0, 7));
-          }}
-          inputValue={buyInputValue}
-          selectedKey={selectedBuyToken.address}
-          onSelectionChange={(id) => {
-            const selectedItem = buyItems.find((o) => o.address === id);
-            if (!selectedItem) return;
+                  <Text className="text-xs block mt-2">
+                    Balance: {balanceUi?.uiAmountString}
+                  </Text>
+                </div>
+              </div>
+            </div>
+            <ComboBox
+              // menuTrigger="focus"
+              items={sellItems}
+              onInputChange={(value: string) => {
+                setSellInputValue(value);
+                const filteredList = tokenList.filter((token) => {
+                  return token.symbol
+                    .toLowerCase()
+                    .includes(value.toLowerCase());
+                });
+                setSellItems(filteredList.slice(0, 7));
+              }}
+              inputValue={sellInputValue}
+              selectedKey={selectedSellToken.address}
+              onSelectionChange={(id) => {
+                const selectedItem = sellItems.find((o) => o.address === id);
+                if (!selectedItem) return;
 
-            // if selected item is the same as the buy token, swap them
-            if (selectedItem?.address === selectedSellToken.address) {
-              setSelectedBuyToken(selectedSellToken);
-              setSelectedSellToken(selectedBuyToken);
-              setSellInputValue(selectedBuyToken.symbol);
-              setBuyInputValue(selectedSellToken.symbol);
-            } else {
-              selectedItem && setSelectedBuyToken(selectedItem);
-              selectedItem && setBuyInputValue(selectedItem.symbol);
-            }
-          }}
-        >
-          <Label>Chose a buy token</Label>
-          <div>
-            <Input className="px-3 py-2" />
-            <Button>🔍</Button>
+                // if selected item is the same as the buy token, swap them
+                if (selectedItem?.address === selectedBuyToken.address) {
+                  setSelectedBuyToken(selectedSellToken);
+                  setSelectedSellToken(selectedBuyToken);
+                  setSellInputValue(selectedBuyToken.symbol);
+                  setBuyInputValue(selectedSellToken.symbol);
+                } else {
+                  setSelectedSellToken(selectedItem);
+                  setSellInputValue(selectedItem.symbol);
+                }
+              }}
+            >
+              <Label>Sell token:</Label>
+              <div>
+                <Input className="px-3 py-2" />
+                <Button>🔍</Button>
+              </div>
+              <Text className="text-xs" slot="description">
+                Search any sell token.
+              </Text>
+              <Popover>
+                <ListBox>
+                  {(item: {
+                    address: string;
+                    chainId: number;
+                    decimals: number;
+                    name: string;
+                    symbol: string;
+                    logoURI: string;
+                    tags: string[];
+                    extensions: any;
+                  }) => (
+                    <ListBoxItem
+                      textValue={item.symbol}
+                      key={item.address}
+                      id={item.address}
+                      className="flex items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                    >
+                      <img
+                        src={item.logoURI}
+                        alt={item.symbol}
+                        style={{ width: "1.5rem", height: "1.5rem" }}
+                      />
+                      &nbsp;
+                      <span>{item.symbol}</span>
+                    </ListBoxItem>
+                  )}
+                </ListBox>
+              </Popover>
+            </ComboBox>
           </div>
-          <Popover>
-            <ListBox>
-              {(item: {
-                address: string;
-                chainId: number;
-                decimals: number;
-                name: string;
-                symbol: string;
-                logoURI: string;
-                tags: string[];
-                extensions: any;
-              }) => (
-                <ListBoxItem
-                  textValue={item.symbol}
-                  key={item.address}
-                  id={item.address}
-                  className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
-                >
-                  <img
-                    src={item.logoURI}
-                    alt={item.symbol}
-                    style={{ width: "1.5rem", height: "1.5rem" }}
+
+          <div className="flex justify-between bg-blue-500/50 rounded-lg p-4">
+            <div className="mr-12">
+              <div className="flex items-center">
+                <img
+                  className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
+                  src={selectedBuyToken.logoURI}
+                  alt="sol"
+                />
+                <div>
+                  <label htmlFor="buy-input" className="block">
+                    You receive:
+                  </label>
+                  <input
+                    disabled
+                    type="text"
+                    id="buy-input"
+                    name="buy-input"
+                    value={buyAmount}
+                    onChange={() => {}}
+                    className="px-3 py-2"
                   />
-                  <span>{item.symbol}</span>
-                </ListBoxItem>
-              )}
-            </ListBox>
-          </Popover>
-        </ComboBox>
-        <label htmlFor="buy-input">buy</label>
-        <input
-          type="text"
-          id="buy-input"
-          name="buy-input"
-          value={buyAmount}
-          disabled
-          onChange={() => {}}
-        />
-        <br />
-        <br />
-        <button
-          type="button"
-          disabled={!quoteResponse || isSwapping || !connected || !publicKey}
-          onClick={async () => {
-            if (!quoteResponse) return;
+                </div>
+              </div>
+            </div>
 
-            try {
-              setIsSwapping(true);
-              const { swapTransaction } = await (
-                await fetch("/swap", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    quoteResponse,
-                    userPublicKey: publicKey,
-                    wrapAndUnwrapSol: true,
-                  }),
-                })
-              ).json();
+            <div>
+              <ComboBox
+                items={buyItems}
+                onInputChange={(value: string) => {
+                  setBuyInputValue(value);
+                  const newItems = tokenList.filter((token) => {
+                    return token.symbol
+                      .toLowerCase()
+                      .includes(value.toLowerCase());
+                  });
+                  setBuyItems(newItems.slice(0, 7));
+                }}
+                inputValue={buyInputValue}
+                selectedKey={selectedBuyToken.address}
+                onSelectionChange={(id) => {
+                  const selectedItem = buyItems.find((o) => o.address === id);
+                  if (!selectedItem) return;
 
-              const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
+                  // if selected item is the same as the buy token, swap them
+                  if (selectedItem?.address === selectedSellToken.address) {
+                    setSelectedBuyToken(selectedSellToken);
+                    setSelectedSellToken(selectedBuyToken);
+                    setSellInputValue(selectedBuyToken.symbol);
+                    setBuyInputValue(selectedSellToken.symbol);
+                  } else {
+                    selectedItem && setSelectedBuyToken(selectedItem);
+                    selectedItem && setBuyInputValue(selectedItem.symbol);
+                  }
+                }}
+              >
+                <Label>Buy token:</Label>
+                <div>
+                  <Input className="px-3 py-2" />
+                  <Button>🔍</Button>
+                </div>
+                <Popover>
+                  <ListBox>
+                    {(item: {
+                      address: string;
+                      chainId: number;
+                      decimals: number;
+                      name: string;
+                      symbol: string;
+                      logoURI: string;
+                      tags: string[];
+                      extensions: any;
+                    }) => (
+                      <ListBoxItem
+                        textValue={item.symbol}
+                        key={item.address}
+                        id={item.address}
+                        className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                      >
+                        <img
+                          src={item.logoURI}
+                          alt={item.symbol}
+                          style={{ width: "1.5rem", height: "1.5rem" }}
+                        />
+                        <span>{item.symbol}</span>
+                      </ListBoxItem>
+                    )}
+                  </ListBox>
+                </Popover>
+              </ComboBox>
+            </div>
+          </div>
 
-              const versionedTx =
-                VersionedTransaction.deserialize(swapTransactionBuf);
+          <br />
+          <br />
+          <button
+            type="button"
+            className="rounded-sm text-slate-50 transition-all duration-200 bg-purple-500 dark:bg-purple-500 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-500/75 dark:active:bg-purple-500/50 py-3 w-full"
+            disabled={!quoteResponse || isSwapping || !connected || !publicKey}
+            onClick={async () => {
+              if (!quoteResponse) return;
 
-              const receipt = await providerRef.current?.signAndSendTransaction(
-                versionedTx
-              );
-              receipt && setTransactionReceipt(receipt.signature);
-              console.info(`Transaction sent: ${receipt?.signature}`);
-            } catch (err) {
-              console.error(err);
-            } finally {
-              // reset
-              setSellAmount("");
-              setBuyAmount("");
-              setQuoteResponse(null);
-              setIsSwapping(false);
-            }
-          }}
-        >
-          {isSwapping ? "Swapping..." : "Swap"}
-        </button>
-      </Form>
-      {transactionReceipt && (
-        <div>
-          <a
-            href={`https://explorer.solana.com/tx/${transactionReceipt}`}
-            rel="noreferrer"
-            target="_blank"
+              try {
+                setIsSwapping(true);
+                const { swapTransaction } = await (
+                  await fetch("/swap", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      quoteResponse,
+                      userPublicKey: publicKey,
+                      wrapAndUnwrapSol: true,
+                    }),
+                  })
+                ).json();
+
+                const swapTransactionBuf = Buffer.from(
+                  swapTransaction,
+                  "base64"
+                );
+
+                const versionedTx =
+                  VersionedTransaction.deserialize(swapTransactionBuf);
+
+                const receipt =
+                  await providerRef.current?.signAndSendTransaction(
+                    versionedTx
+                  );
+                receipt && setTransactionReceipt(receipt.signature);
+                console.info(`Transaction sent: ${receipt?.signature}`);
+              } catch (err) {
+                console.error(err);
+              } finally {
+                // reset
+                setSellAmount("");
+                setBuyAmount("");
+                setQuoteResponse(null);
+                setIsSwapping(false);
+              }
+            }}
           >
-            View transaction
-          </a>
-        </div>
-      )}
-    </div>
+            {isSwapping ? "Swapping..." : "Swap"}
+          </button>
+        </Form>
+        {transactionReceipt && (
+          <div>
+            <a
+              href={`https://explorer.solana.com/tx/${transactionReceipt}`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              View transaction
+            </a>
+          </div>
+        )}
+      </section>
+    </main>
   );
 }
 
