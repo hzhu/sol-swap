@@ -9,8 +9,13 @@
 [x] mobile works!
 [x] flip direction button works
 [x] doesn't show balance if zero
+[x] successful swap... opens a modal dialog with details?
+[x] and confetti
+[ ] handles unconnected state?
+[ ] handles insufficient balance to sell
+[ ] handles reverts?
+[ ] handless API errors from Jupiter
 [ ] add spinner to swapping and fetching button
-[ ] successful swap... opens a modal dialog with details? and confetti.
 [ ] max button populates the sell input
 [ ] refactor state into useReducer
 [ ] async defer the token list

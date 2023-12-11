@@ -1,3 +1,5 @@
+import Confetti from "react-confetti";
+
 import {
   Button,
   ComboBox,
@@ -7,6 +9,11 @@ import {
   ListBoxItem,
   Popover,
   Text,
+  Dialog,
+  DialogTrigger,
+  Heading,
+  Modal,
+  TextField,
 } from "react-aria-components";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -122,7 +129,7 @@ export default function Index() {
   const debouncedSellAmount: string = useDebounce(sellAmount, 500);
   const [quoteResponse, setQuoteResponse] = useState<any>(null);
   const [isSwapping, setIsSwapping] = useState<boolean>(false);
-  const [transactionReceipt, setTransactionReceipt] = useState<string>("");
+  const [transactionReceipt, setTransactionReceipt] = useState<string>("x");
 
   const [selectedSellToken, setSelectedSellToken] = useState({
     address: "So11111111111111111111111111111111111111112",
@@ -218,8 +225,6 @@ export default function Index() {
         const balance = await connection.getBalance(
           new PublicKey(publicKey.toString())
         );
-
-        console.log(lamportsToTokenUnits(balance, 9), "<--balance");
 
         const uiAmount = lamportsToTokenUnits(balance, 9);
 
@@ -570,6 +575,41 @@ export default function Index() {
           </div>
         )}
       </section>
+      <Modal
+        isDismissable
+        isOpen={Boolean(transactionReceipt)}
+        className="max-w-xl px-2 sm:px-0"
+      >
+        <Dialog className="bg-white rounded-md p-8">
+          <Confetti />
+          <Heading slot="title" className="text-2xl text-center">
+            Transaction Completed!
+          </Heading>
+          <div className="mt-8 mb-8">
+            Your transaction has been completed and will soon be visible on the
+            Solana Explorer. Please save the link for your records.
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onPress={() => {
+                setTransactionReceipt("");
+              }}
+              className="mr-3 w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center transition-colors duration-250 border-none dark:hover:bg-blue-marguerite-900 dark:pressed:bg-blue-marguerite-700"
+            >
+              <span>Close</span>
+            </Button>
+            <Button className="text-white w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center outline-none outline-2 outline-dotted  focus-visible:outline-purple-300 transition-colors duration-250 bg-purple-800 hover:bg-purple-800/95 pressed:bg-purple-950 border-purple-950">
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                href={`https://explorer.solana.com/tx/${transactionReceipt}`}
+              >
+                View Link
+              </a>
+            </Button>
+          </div>
+        </Dialog>
+      </Modal>
     </main>
   );
 }

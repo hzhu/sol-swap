@@ -25,6 +25,7 @@
     "isbot": "^3.6.8",
     "react": "^18.2.0",
     "react-aria-components": "^1.0.0-rc.0",
+    "react-confetti": "^6.1.0",
     "react-dom": "^18.2.0",
     "tailwindcss-react-aria-components": "^1.0.0-rc.0"
   },
