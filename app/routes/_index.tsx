@@ -340,8 +340,17 @@ export default function Index() {
           name="sol"
           placeholder="0.0"
           value={sellAmount}
+          inputMode="decimal"
+          autoComplete="off"
+          autoCorrect="off"
+          pattern="^[0-9]*[.,]?[0-9]*$"
+          minLength={1}
+          maxLength={50}
+          spellCheck="false"
           onChange={(e) => {
-            setSellAmount(e.target.value.trim());
+            if (/^[0-9]*[.,]?[0-9]*$/.test(e.target.value)) {
+              setSellAmount(e.target.value.trim());
+            }
           }}
         />
         <div className="text-xs">Balance: {balanceUi?.uiAmountString}</div>
