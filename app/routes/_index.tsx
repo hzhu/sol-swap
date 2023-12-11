@@ -396,6 +396,8 @@ export default function Index() {
                 setSelectedSellToken(selectedBuyToken);
                 setSellInputValue(selectedBuyToken.symbol);
                 setBuyInputValue(selectedSellToken.symbol);
+                setSellItems(buyItems);
+                setBuyItems(sellItems);
               }}
             />
           </div>
