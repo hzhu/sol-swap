@@ -8,7 +8,7 @@ import {
   Popover,
   Text,
 } from "react-aria-components";
-import type { MetaFunction } from "@remix-run/node";
+import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { VersionedTransaction, PublicKey } from "@solana/web3.js";
 import { Form } from "@remix-run/react";
@@ -17,6 +17,10 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import type { PhantomWallet } from "~/types";
 import { tokenList } from "~/tokenList";
+import { DirectionButton } from "~/components/DirectionButton";
+import styles from "~/tailwind.css";
+
+export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
 // Extend the Window interface
 declare global {
@@ -263,9 +267,9 @@ export default function Index() {
       className="max-w-2xl mx-auto text-lg"
     >
       <section>
-        <h1 className="text-center text-4xl">solswap</h1>
+        <h1 className="text-center text-4xl mb-4">solswap</h1>
         <Form>
-          <div className="flex items-center justify-between bg-purple-100 rounded-lg p-4 mb-3">
+          <div className="flex items-center justify-between bg-purple-100 rounded-lg p-4">
             <div className="mr-12">
               <div className="flex items-center">
                 <img
@@ -370,7 +374,9 @@ export default function Index() {
               </Popover>
             </ComboBox>
           </div>
-
+          <div className="flex justify-center items-center h-0 relative bottom-2">
+            <DirectionButton className="" />
+          </div>
           <div className="flex items-center justify-between bg-green-100 rounded-lg p-4">
             <div className="mr-12">
               <div className="flex items-center">
@@ -389,8 +395,9 @@ export default function Index() {
                     id="buy-input"
                     name="buy-input"
                     value={buyAmount}
+                    placeholder="0.0"
                     onChange={() => {}}
-                    className="px-3 py-2 rounded-lg border cursor-not-allowed"
+                    className="px-3 py-2 rounded-lg border cursor-not-allowed bg-gray-200"
                   />
                 </div>
               </div>
