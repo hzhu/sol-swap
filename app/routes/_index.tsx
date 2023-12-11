@@ -112,7 +112,7 @@ export default function Index() {
     
   }
   */
-
+  const [isFetchingQuote, setIsFetchingQuote] = useState(false);
   const [nativeBalance, setNativeBalance] = useState<any>();
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
@@ -195,6 +195,7 @@ export default function Index() {
     const url = `/quote?${searchParams}`;
 
     async function fetchQuote() {
+      setIsFetchingQuote(true);
       const response = await fetch(url);
       const data = await response.json();
       setQuoteResponse(data);
@@ -205,6 +206,7 @@ export default function Index() {
           selectedBuyToken.decimals
         ).toString()
       );
+      setIsFetchingQuote(false);
     }
 
     fetchQuote();
@@ -264,45 +266,50 @@ export default function Index() {
   return (
     <main
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
-      className="max-w-2xl mx-auto text-lg"
+      className="sm:max-w-2xl mx-auto text-lg"
     >
       <section>
-        <h1 className="text-center text-4xl mb-4">solswap</h1>
+        <h1 className="text-center text-4xl mt-6 mb-3">solswap</h1>
         <Form>
-          <div className="flex items-center justify-between bg-purple-100 rounded-tl-lg rounded-tr-lg p-4">
-            <div className="mr-12">
-              <div className="flex items-center">
+          <div className="sm:flex sm:justify-between bg-purple-100 sm:rounded-tl-lg sm:rounded-tr-lg p-4 pb-8 sm:pb-4">
+            <div>
+              <label htmlFor="sell-input" className="text-base">
+                You sell:
+              </label>
+              <div className="flex w-full">
                 <img
                   className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
                   src={selectedSellToken.logoURI}
                   alt="sol"
                 />
-                <div>
-                  <label className="block">You sell:</label>
-                  <input
-                    type="text"
-                    name="sol"
-                    placeholder="0.0"
-                    value={sellAmount}
-                    inputMode="decimal"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    pattern="^[0-9]*[.,]?[0-9]*$"
-                    minLength={1}
-                    maxLength={50}
-                    spellCheck="false"
-                    className="px-3 py-2 rounded-lg border"
-                    onChange={(e) => {
-                      if (/^[0-9]*[.,]?[0-9]*$/.test(e.target.value)) {
-                        setSellAmount(e.target.value.trim());
-                      }
-                    }}
-                  />
-                  <Text className="text-xs block mt-2">
-                    Balance: {balanceUi?.uiAmountString}
-                  </Text>
-                </div>
+                <input
+                  type="text"
+                  name="sol"
+                  placeholder="0.0"
+                  value={sellAmount}
+                  inputMode="decimal"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  pattern="^[0-9]*[.,]?[0-9]*$"
+                  minLength={1}
+                  id="sell-input"
+                  maxLength={50}
+                  spellCheck="false"
+                  className="px-3 py-2 rounded-lg border w-full"
+                  onChange={(e) => {
+                    if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
+                      setSellAmount(e.target.value.trim());
+                    }
+                    if (e.target.value === "") {
+                      setBuyAmount("");
+                      setQuoteResponse(null);
+                    }
+                  }}
+                />
               </div>
+              <Text className="text-xs block mt-2 text-end">
+                Balance: {balanceUi?.uiAmountString}
+              </Text>
             </div>
             <ComboBox
               // menuTrigger="focus"
@@ -334,14 +341,12 @@ export default function Index() {
                 }
               }}
             >
-              <Label>Sell token:</Label>
+              <Label className="text-xs">Search for any token</Label>
               <div>
-                <Input className="px-3 py-2 rounded-lg border" />
+                <Input className="px-3 py-2 rounded-lg border w-full" />
                 <Button>🔍</Button>
               </div>
-              <Text className="text-xs relative bottom-1" slot="description">
-                Search any token.
-              </Text>
+
               <Popover>
                 <ListBox>
                   {(item: {
@@ -375,20 +380,23 @@ export default function Index() {
             </ComboBox>
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
-            <DirectionButton className="" />
+            <DirectionButton
+              className=""
+              disabled={isSwapping || isFetchingQuote}
+            />
           </div>
-          <div className="flex items-center justify-between bg-green-100 rounded-bl-lg rounded-br-lg p-4">
-            <div className="mr-12">
-              <div className="flex items-center">
-                <img
-                  className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
-                  src={selectedBuyToken.logoURI}
-                  alt="sol"
-                />
-                <div>
-                  <label htmlFor="buy-input" className="block">
-                    You receive:
-                  </label>
+          <div className="sm:flex sm:items-center sm:justify-between bg-green-100 rounded-bl-lg rounded-br-lg p-4">
+            <div className="sm:mr-12">
+              <div>
+                <label htmlFor="buy-input" className="text-base">
+                  You receive:
+                </label>
+                <div className="flex items-center">
+                  <img
+                    className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
+                    src={selectedBuyToken.logoURI}
+                    alt="sol"
+                  />
                   <input
                     disabled
                     type="text"
@@ -397,7 +405,7 @@ export default function Index() {
                     value={buyAmount}
                     placeholder="0.0"
                     onChange={() => {}}
-                    className="px-3 py-2 rounded-lg border cursor-not-allowed bg-gray-200"
+                    className="px-3 py-2 rounded-lg border cursor-not-allowed bg-gray-200 w-full"
                   />
                 </div>
               </div>
@@ -433,18 +441,10 @@ export default function Index() {
                   }
                 }}
               >
-                <Label>Buy token:</Label>
+                <Label className="text-xs">Search for any token</Label>
                 <div>
-                  <div>
-                    <Input className="px-3 py-2 rounded-lg border" />
-                    <Button>🔍</Button>
-                  </div>
-                  <Text
-                    className="text-xs relative bottom-1"
-                    slot="description"
-                  >
-                    Search any token.
-                  </Text>
+                  <Input className="px-3 py-2 rounded-lg border w-full" />
+                  <Button>🔍</Button>
                 </div>
                 <Popover>
                   <ListBox>
@@ -480,58 +480,66 @@ export default function Index() {
             </div>
           </div>
           <br />
-          <button
-            type="button"
-            className={`text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
-              !quoteResponse || isSwapping || !connected || !publicKey
-                ? "cursor-not-allowed"
-                : "cursor-pointer"
-            }`}
-            disabled={!quoteResponse || isSwapping || !connected || !publicKey}
-            onClick={async () => {
-              if (!quoteResponse) return;
-
-              try {
-                setIsSwapping(true);
-                const { swapTransaction } = await (
-                  await fetch("/swap", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      quoteResponse,
-                      userPublicKey: publicKey,
-                      wrapAndUnwrapSol: true,
-                    }),
-                  })
-                ).json();
-
-                const swapTransactionBuf = Buffer.from(
-                  swapTransaction,
-                  "base64"
-                );
-
-                const versionedTx =
-                  VersionedTransaction.deserialize(swapTransactionBuf);
-
-                const receipt =
-                  await providerRef.current?.signAndSendTransaction(
-                    versionedTx
-                  );
-                receipt && setTransactionReceipt(receipt.signature);
-                console.info(`Transaction sent: ${receipt?.signature}`);
-              } catch (err) {
-                console.error(err);
-              } finally {
-                // reset
-                setSellAmount("");
-                setBuyAmount("");
-                setQuoteResponse(null);
-                setIsSwapping(false);
+          <div className="px-4 sm:px-0">
+            <button
+              type="button"
+              className={`text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
+                !quoteResponse || isSwapping || !connected || !publicKey
+                  ? "cursor-not-allowed"
+                  : "cursor-pointer"
+              }`}
+              disabled={
+                !quoteResponse || isSwapping || !connected || !publicKey
               }
-            }}
-          >
-            {isSwapping ? "Swapping..." : "Swap"}
-          </button>
+              onClick={async () => {
+                if (!quoteResponse) return;
+
+                try {
+                  setIsSwapping(true);
+                  const { swapTransaction } = await (
+                    await fetch("/swap", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        quoteResponse,
+                        userPublicKey: publicKey,
+                        wrapAndUnwrapSol: true,
+                      }),
+                    })
+                  ).json();
+
+                  const swapTransactionBuf = Buffer.from(
+                    swapTransaction,
+                    "base64"
+                  );
+
+                  const versionedTx =
+                    VersionedTransaction.deserialize(swapTransactionBuf);
+
+                  const receipt =
+                    await providerRef.current?.signAndSendTransaction(
+                      versionedTx
+                    );
+                  receipt && setTransactionReceipt(receipt.signature);
+                  console.info(`Transaction sent: ${receipt?.signature}`);
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  // reset
+                  setSellAmount("");
+                  setBuyAmount("");
+                  setQuoteResponse(null);
+                  setIsSwapping(false);
+                }
+              }}
+            >
+              {isFetchingQuote
+                ? "Getting best price…"
+                : isSwapping
+                ? "Swapping…"
+                : "Swap"}
+            </button>
+          </div>
         </Form>
         {transactionReceipt && (
           <div>

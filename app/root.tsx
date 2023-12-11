@@ -79,7 +79,7 @@ export default function App() {
             <WalletProvider wallets={wallets} autoConnect>
               <WalletModalProvider>
                 {isMounted && (
-                  <div className="flex justify-end mt-3 mr-3 mb-10">
+                  <div className="flex justify-end mt-1 mr-1">
                     <WalletMultiButton />
                     &nbsp;&nbsp;
                     <WalletDisconnectButton />
