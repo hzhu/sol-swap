@@ -23,6 +23,8 @@
   box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
   border-radius: 6px;
   outline: none;
+  height: 400px;
+  overflow: scroll;
 
   &[data-placement="top"] {
     --origin: translateY(8px);
@@ -87,7 +89,7 @@
 } */
 
 .react-aria-Button {
-  background: slateblue;
+  background: white;
   color: white;
   border-radius: 4px;
   border: none;

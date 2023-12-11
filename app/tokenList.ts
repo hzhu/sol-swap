@@ -1,3 +1,70 @@
+export const DEFAULT_TOKENS = [
+  {
+    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    chainId: 101,
+    decimals: 6,
+    name: "USD Coin",
+    symbol: "USDC",
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+    tags: ["old-registry", "solana-fm"],
+  },
+  {
+    address: "So11111111111111111111111111111111111111112",
+    chainId: 101,
+    decimals: 9,
+    name: "Wrapped SOL",
+    symbol: "SOL",
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+    tags: ["old-registry"],
+    extensions: { coingeckoId: "wrapped-solana" },
+  },
+  {
+    address: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    chainId: 101,
+    decimals: 5,
+    name: "BonkCoin",
+    symbol: "Bonk",
+    logoURI:
+      "https://arweave.net/hQiPZOsRZXGXBJd_82PhVdlM_hACsT_q6wqwf5cSY7I?ext=png",
+    tags: ["community"],
+    extensions: { coingeckoId: "bonk" },
+  },
+  {
+    address: "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",
+    chainId: 101,
+    decimals: 9,
+    name: "JITO",
+    symbol: "JTO",
+    logoURI: "https://metadata.jito.network/token/jto/image",
+    tags: ["community"],
+    extensions: { coingeckoId: "jito-governance-token" },
+  },
+  // {
+  //   address: "hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux",
+  //   chainId: 101,
+  //   decimals: 8,
+  //   name: "Helium Network Token",
+  //   symbol: "HNT",
+  //   logoURI:
+  //     "https://shdw-drive.genesysgo.net/CsDkETHRRR1EcueeN346MJoqzymkkr7RFjMqGpZMzAib/hnt.png",
+  //   tags: ["community", "solana-fm"],
+  //   extensions: { coingeckoId: "helium" },
+  // },
+  {
+    address: "orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE",
+    chainId: 101,
+    decimals: 6,
+    name: "Orca",
+    symbol: "ORCA",
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE/logo.png",
+    tags: ["old-registry", "solana-fm"],
+    extensions: { coingeckoId: "orca" },
+  },
+];
+
 export const tokenList = [
   {
     address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",

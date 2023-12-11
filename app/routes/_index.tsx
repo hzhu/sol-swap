@@ -6,6 +6,7 @@ import {
   ListBox,
   ListBoxItem,
   Popover,
+  Text,
 } from "react-aria-components";
 import type { MetaFunction } from "@remix-run/node";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -139,29 +140,17 @@ export default function Index() {
       "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
     tags: ["old-registry", "solana-fm"],
   });
-  const [items, setItems] = useState([
-    {
-      address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      chainId: 101,
-      decimals: 6,
-      name: "USD Coin",
-      symbol: "USDC",
-      logoURI:
-        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-      tags: ["old-registry", "solana-fm"],
-    },
-    {
-      address: "So11111111111111111111111111111111111111112",
-      chainId: 101,
-      decimals: 9,
-      name: "Wrapped SOL",
-      symbol: "SOL",
-      logoURI:
-        "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-      tags: ["old-registry"],
-      extensions: { coingeckoId: "wrapped-solana" },
-    },
-  ]);
+  const [sellItems, setSellItems] = useState(
+    tokenList.filter((item) => {
+      return item.symbol.toLowerCase().includes("sol");
+    })
+  );
+
+  const [buyItems, setBuyItems] = useState(
+    tokenList.filter((item) => {
+      return item.symbol.toLowerCase().includes("usdc");
+    })
+  );
 
   useEffect(() => {
     if (!publicKey) return;
@@ -273,18 +262,19 @@ export default function Index() {
       <h1>solswap</h1>
       <Form>
         <ComboBox
-          items={items}
+          // menuTrigger="focus"
+          items={sellItems}
           onInputChange={(value: string) => {
             setSellInputValue(value);
             const filteredList = tokenList.filter((token) => {
               return token.symbol.toLowerCase().includes(value.toLowerCase());
             });
-            setItems(filteredList.slice(0, 7));
+            setSellItems(filteredList.slice(0, 7));
           }}
           inputValue={sellInputValue}
           selectedKey={selectedSellToken.address}
           onSelectionChange={(id) => {
-            const selectedItem = items.find((o) => o.address === id);
+            const selectedItem = sellItems.find((o) => o.address === id);
             if (!selectedItem) return;
 
             // if selected item is the same as the buy token, swap them
@@ -299,11 +289,14 @@ export default function Index() {
             }
           }}
         >
-          <Label>Chose a sell token</Label>
+          <Label>Sell token</Label>
           <div>
             <Input className="px-3 py-2" />
-            <Button>▼</Button>
+            <Button>🔍</Button>
           </div>
+          <Text className="text-xs" slot="description">
+            Search any sell token.
+          </Text>
           <Popover>
             <ListBox>
               {(item: {
@@ -334,7 +327,7 @@ export default function Index() {
             </ListBox>
           </Popover>
         </ComboBox>
-        <label className="">Sell</label>
+        <label className="">Sell amount</label>
         <input
           type="text"
           name="sol"
@@ -358,18 +351,18 @@ export default function Index() {
         <br />
         <br />
         <ComboBox
-          items={items}
+          items={buyItems}
           onInputChange={(value: string) => {
             setBuyInputValue(value);
             const newItems = tokenList.filter((token) => {
               return token.symbol.toLowerCase().includes(value.toLowerCase());
             });
-            setItems(newItems.slice(0, 7));
+            setBuyItems(newItems.slice(0, 7));
           }}
           inputValue={buyInputValue}
           selectedKey={selectedBuyToken.address}
           onSelectionChange={(id) => {
-            const selectedItem = items.find((o) => o.address === id);
+            const selectedItem = buyItems.find((o) => o.address === id);
             if (!selectedItem) return;
 
             // if selected item is the same as the buy token, swap them
@@ -387,7 +380,7 @@ export default function Index() {
           <Label>Chose a buy token</Label>
           <div>
             <Input className="px-3 py-2" />
-            <Button>▼</Button>
+            <Button>🔍</Button>
           </div>
           <Popover>
             <ListBox>

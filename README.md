@@ -11,7 +11,6 @@
 [ ] refactor state into useReducer
 [ ] async defer the token list
 [ ] show token image when token is selected
-[ ] combobox dropdown should have a single section saying "POPULAR" / "TRENDING" which will be hard-coded
 [ ] show token name as item text
 [ ] show token balance as item text
 [ ] store transactions in local storage or even better in a cookie string
