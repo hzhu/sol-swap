@@ -187,7 +187,6 @@ export default function Index() {
     if (Number(debouncedSellAmount) === 0) return;
     if (!selectedBuyToken || !selectedSellToken) return;
 
-    // TODO: get decimals from token list
     const amountInSmallestUnit =
       Number(debouncedSellAmount) * Math.pow(10, selectedSellToken.decimals);
 
@@ -425,43 +424,41 @@ export default function Index() {
           type="button"
           disabled={!quoteResponse || isSwapping || !connected || !publicKey}
           onClick={async () => {
-            console.log(quoteResponse);
-            return;
-            // if (!quoteResponse) return;
+            if (!quoteResponse) return;
 
-            // try {
-            //   setIsSwapping(true);
-            //   // get serialized transactions for the swap
-            //   const { swapTransaction } = await (
-            //     await fetch("https://quote-api.jup.ag/v6/swap", {
-            //       method: "POST",
-            //       headers: { "Content-Type": "application/json" },
-            //       body: JSON.stringify({
-            //         quoteResponse,
-            //         userPublicKey: publicKey,
-            //         wrapAndUnwrapSol: true,
-            //       }),
-            //     })
-            //   ).json();
+            try {
+              setIsSwapping(true);
+              const { swapTransaction } = await (
+                await fetch("/swap", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    quoteResponse,
+                    userPublicKey: publicKey,
+                    wrapAndUnwrapSol: true,
+                  }),
+                })
+              ).json();
 
-            //   const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
+              const swapTransactionBuf = Buffer.from(swapTransaction, "base64");
 
-            //   const versionedTx =
-            //     VersionedTransaction.deserialize(swapTransactionBuf);
+              const versionedTx =
+                VersionedTransaction.deserialize(swapTransactionBuf);
 
-            //   const receipt = await providerRef.current?.signAndSendTransaction(
-            //     versionedTx
-            //   );
-            //   receipt && setTransactionReceipt(receipt.signature);
-            // } catch (err) {
-            //   console.error(err);
-            // } finally {
-            //   // reset
-            //   setSellAmount("");
-            //   setBuyAmount("");
-            //   setQuoteResponse(null);
-            //   setIsSwapping(false);
-            // }
+              const receipt = await providerRef.current?.signAndSendTransaction(
+                versionedTx
+              );
+              receipt && setTransactionReceipt(receipt.signature);
+              console.info(`Transaction sent: ${receipt?.signature}`);
+            } catch (err) {
+              console.error(err);
+            } finally {
+              // reset
+              setSellAmount("");
+              setBuyAmount("");
+              setQuoteResponse(null);
+              setIsSwapping(false);
+            }
           }}
         >
           {isSwapping ? "Swapping..." : "Swap"}
