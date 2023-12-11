@@ -565,17 +565,6 @@ export default function Index() {
             </button>
           </div>
         </Form>
-        {transactionReceipt && (
-          <div>
-            <a
-              href={`https://explorer.solana.com/tx/${transactionReceipt}`}
-              rel="noreferrer"
-              target="_blank"
-            >
-              View transaction
-            </a>
-          </div>
-        )}
       </section>
       <Modal
         isDismissable
