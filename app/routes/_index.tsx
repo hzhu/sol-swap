@@ -269,7 +269,7 @@ export default function Index() {
   return (
     <main
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
-      className="sm:max-w-2xl mx-auto text-lg"
+      className="sm:max-w-2xl mx-auto text-lg mt-20 sm:mt-40"
     >
       <section>
         <h1 className="text-center text-4xl mt-6 mb-3">solswap</h1>
