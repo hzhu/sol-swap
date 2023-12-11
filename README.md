@@ -21,3 +21,5 @@
 [ ] async defer the token list
 [ ] store transactions in local storage or even better in a cookie string
 [ ] tab shows transaction history
+[ ] store transactions in pocketbase
+[ ] support coinbase wallet

@@ -269,12 +269,12 @@ export default function Index() {
   return (
     <main
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
-      className="sm:max-w-2xl mx-auto text-lg mt-20 sm:mt-40"
+      className="sm:max-w-2xl mx-auto text-lg mt-10 sm:mt-40"
     >
       <section>
         <h1 className="text-center text-4xl mt-6 mb-3">solswap</h1>
         <Form>
-          <div className="sm:flex sm:justify-between bg-purple-100 sm:rounded-tl-lg sm:rounded-tr-lg p-4 pb-8 sm:pb-4">
+          <div className="sm:flex sm:justify-between bg-purple-300 sm:rounded-tl-lg sm:rounded-tr-lg p-4 pb-8 sm:pb-4">
             <div>
               <label
                 htmlFor="sell-input"
@@ -288,7 +288,7 @@ export default function Index() {
                   src={selectedSellToken.logoURI}
                   alt="sol"
                 />
-                <input
+                <Input
                   type="text"
                   name="sol"
                   placeholder="0.0"
@@ -301,7 +301,7 @@ export default function Index() {
                   id="sell-input"
                   maxLength={50}
                   spellCheck="false"
-                  className="px-3 py-2 rounded-lg border w-full"
+                  className="px-3 py-2 rounded-lg border w-full border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
                   onChange={(e) => {
                     if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
                       setSellAmount(e.target.value.trim());
@@ -351,7 +351,7 @@ export default function Index() {
                 Search for any token
               </Label>
               <div>
-                <Input className="px-3 py-2 rounded-lg border w-full" />
+                <Input className="px-3 py-2 rounded-lg border w-full border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900" />
                 <Button>🔍</Button>
               </div>
 
@@ -389,7 +389,7 @@ export default function Index() {
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton
-              className=""
+              className="border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
               disabled={isSwapping || isFetchingQuote}
               onClick={() => {
                 setSelectedBuyToken(selectedSellToken);
@@ -401,7 +401,7 @@ export default function Index() {
               }}
             />
           </div>
-          <div className="sm:flex sm:items-center sm:justify-between bg-green-100 rounded-bl-lg rounded-br-lg p-4">
+          <div className="sm:flex sm:items-center sm:justify-between bg-green-300 rounded-bl-lg rounded-br-lg p-4">
             <div className="sm:mr-12">
               <div>
                 <label htmlFor="buy-input" className="text-base font-semibold">
@@ -461,7 +461,7 @@ export default function Index() {
                   Search for any token
                 </Label>
                 <div>
-                  <Input className="px-3 py-2 rounded-lg border w-full" />
+                  <Input className="px-3 py-2 rounded-lg border w-full border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900" />
                   <Button>🔍</Button>
                 </div>
                 <Popover>
@@ -501,7 +501,7 @@ export default function Index() {
           <div className="px-4 sm:px-0">
             <button
               type="button"
-              className={`text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
+              className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
                 !quoteResponse || isSwapping || !connected || !publicKey
                   ? "cursor-not-allowed"
                   : "cursor-pointer"
@@ -567,7 +567,6 @@ export default function Index() {
         </Form>
       </section>
       <Modal
-        isDismissable
         isOpen={Boolean(transactionReceipt)}
         className="max-w-xl px-2 sm:px-0"
       >
