@@ -6,8 +6,11 @@
 [x] can swap
 [x] input value validation rules
 [x] show token image when token is selected
+[x] mobile works!
+[x] flip direction button works
+[x] doesn't show balance if zero
+[ ] add spinner to swapping and fetching button
 [ ] successful swap... opens a modal dialog with details? and confetti.
-[ ] flip direction button
 [ ] max button populates the sell input
 [ ] refactor state into useReducer
 [ ] async defer the token list

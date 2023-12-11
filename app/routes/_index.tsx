@@ -273,8 +273,11 @@ export default function Index() {
         <Form>
           <div className="sm:flex sm:justify-between bg-purple-100 sm:rounded-tl-lg sm:rounded-tr-lg p-4 pb-8 sm:pb-4">
             <div>
-              <label htmlFor="sell-input" className="text-base">
-                You sell:
+              <label
+                htmlFor="sell-input"
+                className="text-base cursor-pointer font-semibold"
+              >
+                You sell
               </label>
               <div className="flex w-full">
                 <img
@@ -307,8 +310,8 @@ export default function Index() {
                   }}
                 />
               </div>
-              <Text className="text-xs block mt-2 text-end">
-                Balance: {balanceUi?.uiAmountString}
+              <Text className="text-xs block mt-2 text-end h-4">
+                {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
               </Text>
             </div>
             <ComboBox
@@ -341,7 +344,9 @@ export default function Index() {
                 }
               }}
             >
-              <Label className="text-xs">Search for any token</Label>
+              <Label className="text-xs cursor-pointer">
+                Search for any token
+              </Label>
               <div>
                 <Input className="px-3 py-2 rounded-lg border w-full" />
                 <Button>🔍</Button>
@@ -383,13 +388,19 @@ export default function Index() {
             <DirectionButton
               className=""
               disabled={isSwapping || isFetchingQuote}
+              onClick={() => {
+                setSelectedBuyToken(selectedSellToken);
+                setSelectedSellToken(selectedBuyToken);
+                setSellInputValue(selectedBuyToken.symbol);
+                setBuyInputValue(selectedSellToken.symbol);
+              }}
             />
           </div>
           <div className="sm:flex sm:items-center sm:justify-between bg-green-100 rounded-bl-lg rounded-br-lg p-4">
             <div className="sm:mr-12">
               <div>
-                <label htmlFor="buy-input" className="text-base">
-                  You receive:
+                <label htmlFor="buy-input" className="text-base font-semibold">
+                  You receive
                 </label>
                 <div className="flex items-center">
                   <img
@@ -441,7 +452,9 @@ export default function Index() {
                   }
                 }}
               >
-                <Label className="text-xs">Search for any token</Label>
+                <Label className="text-xs cursor-pointer">
+                  Search for any token
+                </Label>
                 <div>
                   <Input className="px-3 py-2 rounded-lg border w-full" />
                   <Button>🔍</Button>
@@ -489,7 +502,11 @@ export default function Index() {
                   : "cursor-pointer"
               }`}
               disabled={
-                !quoteResponse || isSwapping || !connected || !publicKey
+                !quoteResponse ||
+                isSwapping ||
+                !connected ||
+                !publicKey ||
+                isFetchingQuote
               }
               onClick={async () => {
                 if (!quoteResponse) return;
