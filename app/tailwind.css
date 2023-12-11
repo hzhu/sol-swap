@@ -23,7 +23,7 @@
   box-shadow: 0 8px 20px rgba(0 0 0 / 0.1);
   border-radius: 6px;
   outline: none;
-  height: 400px;
+  height: 300px;
   overflow: scroll;
 
   &[data-placement="top"] {

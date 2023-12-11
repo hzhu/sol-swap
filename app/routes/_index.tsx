@@ -260,12 +260,12 @@ export default function Index() {
   return (
     <main
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
-      className="max-w-2xl mx-auto"
+      className="max-w-2xl mx-auto text-lg"
     >
       <section>
-        <h1>solswap</h1>
+        <h1 className="text-center text-4xl">solswap</h1>
         <Form>
-          <div className="flex items-center justify-between bg-purple-500/50 rounded-lg p-4 mb-3">
+          <div className="flex items-center justify-between bg-purple-100 rounded-lg p-4 mb-3">
             <div className="mr-12">
               <div className="flex items-center">
                 <img
@@ -287,7 +287,7 @@ export default function Index() {
                     minLength={1}
                     maxLength={50}
                     spellCheck="false"
-                    className="px-3 py-2"
+                    className="px-3 py-2 rounded-lg border"
                     onChange={(e) => {
                       if (/^[0-9]*[.,]?[0-9]*$/.test(e.target.value)) {
                         setSellAmount(e.target.value.trim());
@@ -332,11 +332,11 @@ export default function Index() {
             >
               <Label>Sell token:</Label>
               <div>
-                <Input className="px-3 py-2" />
+                <Input className="px-3 py-2 rounded-lg border" />
                 <Button>🔍</Button>
               </div>
-              <Text className="text-xs" slot="description">
-                Search any sell token.
+              <Text className="text-xs relative bottom-1" slot="description">
+                Search any token.
               </Text>
               <Popover>
                 <ListBox>
@@ -354,12 +354,13 @@ export default function Index() {
                       textValue={item.symbol}
                       key={item.address}
                       id={item.address}
-                      className="flex items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                      className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-purple-900 data-[hovered]:dark:bg-purple-800 data-[hovered]:text-white data-[disabled]:bg-gray-100"
                     >
                       <img
                         src={item.logoURI}
                         alt={item.symbol}
                         style={{ width: "1.5rem", height: "1.5rem" }}
+                        className="rounded-full"
                       />
                       &nbsp;
                       <span>{item.symbol}</span>
@@ -370,7 +371,7 @@ export default function Index() {
             </ComboBox>
           </div>
 
-          <div className="flex justify-between bg-blue-500/50 rounded-lg p-4">
+          <div className="flex items-center justify-between bg-green-100 rounded-lg p-4">
             <div className="mr-12">
               <div className="flex items-center">
                 <img
@@ -389,7 +390,7 @@ export default function Index() {
                     name="buy-input"
                     value={buyAmount}
                     onChange={() => {}}
-                    className="px-3 py-2"
+                    className="px-3 py-2 rounded-lg border cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -427,8 +428,16 @@ export default function Index() {
               >
                 <Label>Buy token:</Label>
                 <div>
-                  <Input className="px-3 py-2" />
-                  <Button>🔍</Button>
+                  <div>
+                    <Input className="px-3 py-2 rounded-lg border" />
+                    <Button>🔍</Button>
+                  </div>
+                  <Text
+                    className="text-xs relative bottom-1"
+                    slot="description"
+                  >
+                    Search any token.
+                  </Text>
                 </div>
                 <Popover>
                   <ListBox>
@@ -446,13 +455,15 @@ export default function Index() {
                         textValue={item.symbol}
                         key={item.address}
                         id={item.address}
-                        className="px-1 py-1 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-blue-400 data-[hovered]:dark:bg-blue-marguerite-600 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                        className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-purple-900 data-[hovered]:dark:bg-purple-800 data-[hovered]:text-white data-[disabled]:bg-gray-100"
                       >
                         <img
                           src={item.logoURI}
                           alt={item.symbol}
                           style={{ width: "1.5rem", height: "1.5rem" }}
+                          className="rounded-full"
                         />
+                        &nbsp;
                         <span>{item.symbol}</span>
                       </ListBoxItem>
                     )}
@@ -461,12 +472,14 @@ export default function Index() {
               </ComboBox>
             </div>
           </div>
-
-          <br />
           <br />
           <button
             type="button"
-            className="rounded-sm text-slate-50 transition-all duration-200 bg-purple-500 dark:bg-purple-500 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-500/75 dark:active:bg-purple-500/50 py-3 w-full"
+            className={`text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
+              !quoteResponse || isSwapping || !connected || !publicKey
+                ? "cursor-not-allowed"
+                : "cursor-pointer"
+            }`}
             disabled={!quoteResponse || isSwapping || !connected || !publicKey}
             onClick={async () => {
               if (!quoteResponse) return;
