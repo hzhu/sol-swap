@@ -553,7 +553,9 @@ export default function Index() {
                 }
               }}
             >
-              {isFetchingQuote
+              {!connected
+                ? "Please connect wallet"
+                : isFetchingQuote
                 ? "Getting best price…"
                 : isSwapping
                 ? "Swapping…"
