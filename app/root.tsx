@@ -85,7 +85,7 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="text-base">
+      <body className="text-base bg-purple-100">
         {wallets && endpoint ? (
           <ConnectionProvider endpoint={endpoint}>
             <WalletProvider wallets={wallets} autoConnect>

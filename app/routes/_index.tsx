@@ -18,8 +18,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { VersionedTransaction, PublicKey } from "@solana/web3.js";
 import { Form } from "@remix-run/react";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import type { PhantomWallet } from "~/types";
 import { tokenList } from "~/tokenList";
 import { DirectionButton } from "~/components/DirectionButton";
@@ -119,6 +119,7 @@ export default function Index() {
   */
   const [isFetchingQuote, setIsFetchingQuote] = useState(false);
   const [nativeBalance, setNativeBalance] = useState<any>();
+  const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
   const [tokenAccounts, setTokenAccounts] = useState<X>();
@@ -499,70 +500,73 @@ export default function Index() {
           </div>
           <br />
           <div className="px-4 sm:px-0">
-            <button
-              type="button"
-              className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
-                !quoteResponse || isSwapping || !connected || !publicKey
-                  ? "cursor-not-allowed"
-                  : "cursor-pointer"
-              }`}
-              disabled={
-                !quoteResponse ||
-                isSwapping ||
-                !connected ||
-                !publicKey ||
-                isFetchingQuote
-              }
-              onClick={async () => {
-                if (!quoteResponse) return;
+            {connected ? (
+              <button
+                type="button"
+                className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
+                  !quoteResponse || isSwapping || !publicKey
+                    ? "cursor-not-allowed"
+                    : "cursor-pointer"
+                }`}
+                disabled={!quoteResponse || isSwapping || isFetchingQuote}
+                onClick={async () => {
+                  if (!quoteResponse) return;
 
-                try {
-                  setIsSwapping(true);
-                  const { swapTransaction } = await (
-                    await fetch("/swap", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        quoteResponse,
-                        userPublicKey: publicKey,
-                        wrapAndUnwrapSol: true,
-                      }),
-                    })
-                  ).json();
+                  try {
+                    setIsSwapping(true);
+                    const { swapTransaction } = await (
+                      await fetch("/swap", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          quoteResponse,
+                          userPublicKey: publicKey,
+                          wrapAndUnwrapSol: true,
+                        }),
+                      })
+                    ).json();
 
-                  const swapTransactionBuf = Buffer.from(
-                    swapTransaction,
-                    "base64"
-                  );
-
-                  const versionedTx =
-                    VersionedTransaction.deserialize(swapTransactionBuf);
-
-                  const receipt =
-                    await providerRef.current?.signAndSendTransaction(
-                      versionedTx
+                    const swapTransactionBuf = Buffer.from(
+                      swapTransaction,
+                      "base64"
                     );
-                  receipt && setTransactionReceipt(receipt.signature);
-                  console.info(`Transaction sent: ${receipt?.signature}`);
-                } catch (err) {
-                  console.error(err);
-                } finally {
-                  // reset
-                  setSellAmount("");
-                  setBuyAmount("");
-                  setQuoteResponse(null);
-                  setIsSwapping(false);
-                }
-              }}
-            >
-              {!connected
-                ? "Please connect wallet"
-                : isFetchingQuote
-                ? "Getting best price…"
-                : isSwapping
-                ? "Swapping…"
-                : "Swap"}
-            </button>
+
+                    const versionedTx =
+                      VersionedTransaction.deserialize(swapTransactionBuf);
+
+                    const receipt =
+                      await providerRef.current?.signAndSendTransaction(
+                        versionedTx
+                      );
+                    receipt && setTransactionReceipt(receipt.signature);
+                    console.info(`Transaction sent: ${receipt?.signature}`);
+                  } catch (err) {
+                    console.error(err);
+                  } finally {
+                    // reset
+                    setSellAmount("");
+                    setBuyAmount("");
+                    setQuoteResponse(null);
+                    setIsSwapping(false);
+                  }
+                }}
+              >
+                {isFetchingQuote
+                  ? "Getting best price…"
+                  : isSwapping
+                  ? "Swapping…"
+                  : "Swap"}
+              </button>
+            ) : (
+              <button
+                className="border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full"
+                onClick={() => {
+                  setVisible(true);
+                }}
+              >
+                Connect Wallet
+              </button>
+            )}
           </div>
         </Form>
       </section>
