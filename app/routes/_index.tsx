@@ -1,5 +1,4 @@
 import Confetti from "react-confetti";
-
 import {
   Button,
   ComboBox,
