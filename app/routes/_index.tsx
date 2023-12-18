@@ -26,6 +26,18 @@ import styles from "~/tailwind.css";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
+// Conversion factor
+const SOL_TO_LAMPORTS = 1_000_000_000;
+
+// Function to convert SOL to Lamports
+function convertSOLToLamports(sol: number) {
+  return Math.round(sol * SOL_TO_LAMPORTS);
+}
+
+// https://solanacompass.com/statistics/fees
+const minimumTxFee = 0.00004;
+//  000039815
+
 // Extend the Window interface
 declare global {
   interface Window {
@@ -188,6 +200,12 @@ export default function Index() {
     const amountInSmallestUnit =
       Number(debouncedSellAmount) * Math.pow(10, selectedSellToken.decimals);
 
+    if (amountInSmallestUnit.toString().includes(".")) {
+      return;
+    }
+
+    console.log(buyAmount, sellAmount);
+
     const searchParams = new URLSearchParams({
       slippageBps: "25",
       onlyDirectRoutes: "false",
@@ -313,9 +331,51 @@ export default function Index() {
                   }}
                 />
               </div>
-              <Text className="text-xs block mt-2 text-end h-4">
-                {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
-              </Text>
+              <div className="flex items-center align-middle justify-center h-4 mt-2">
+                {balanceUi && (
+                  <>
+                    <Text className="text-xs block text-end ">
+                      {`Balance: ${balanceUi.uiAmountString}`}
+                    </Text>
+                    &nbsp;
+                    <button
+                      onClick={() => {
+                        if (
+                          selectedSellToken.address ===
+                          "So11111111111111111111111111111111111111112"
+                        ) {
+                          // Define the numbers
+                          const amount = balanceUi.uiAmount;
+
+                          // Define the scaling factor
+                          const scaleFactor = 10 ** 9;
+
+                          // Convert the numbers to BigInt after scaling
+                          const scaledAmount = BigInt(
+                            Math.round(amount * scaleFactor)
+                          );
+                          const scaledFees = BigInt(
+                            Math.round(minimumTxFee * scaleFactor)
+                          );
+
+                          // Perform the subtraction
+                          const scaledResult = scaledAmount - scaledFees;
+
+                          // Convert back to a number and scale down
+                          const result = Number(scaledResult) / scaleFactor;
+
+                          setSellAmount(result.toString());
+                        } else {
+                          setSellAmount(balanceUi?.uiAmountString || "");
+                        }
+                      }}
+                      className="text-xs italic hover:bg-purple-600 hover:underline hover:text-slate-50 active:underline active:text-slate-50"
+                    >
+                      (Max)
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             <ComboBox
               // menuTrigger="focus"
@@ -396,6 +456,8 @@ export default function Index() {
                 setSelectedSellToken(selectedBuyToken);
                 setSellInputValue(selectedBuyToken.symbol);
                 setBuyInputValue(selectedSellToken.symbol);
+                setSellAmount(buyAmount);
+                setBuyAmount(sellAmount);
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
               }}
