@@ -11,6 +11,7 @@
 [x] doesn't show balance if zero
 [x] successful swap... opens a modal dialog with details?
 [x] and confetti
+[ ] should have insufficient balance when selling more than balance
 [ ] add spinner to swapping and fetching button
 [ ] max button populates the sell input
 [ ] handles unconnected state?
