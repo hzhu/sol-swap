@@ -13,13 +13,17 @@ import {
   Modal,
 } from "react-aria-components";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { VersionedTransaction, PublicKey } from "@solana/web3.js";
 import { Form } from "@remix-run/react";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import type { PhantomWallet } from "~/types";
+import type {
+  PhantomWallet,
+  QuoteResponse,
+  ParsedTokenAccountsByOwner,
+} from "~/types";
 import { tokenList } from "~/tokenList";
 import { DirectionButton } from "~/components/DirectionButton";
 import styles from "~/tailwind.css";
@@ -34,49 +38,6 @@ declare global {
     };
   }
 }
-
-type Context = {
-  slot: number;
-};
-
-/**
- * RPC Response with extra contextual information
- */
-type RpcResponseAndContext<T> = {
-  /** response context */
-  context: Context;
-  /** response value */
-  value: T;
-};
-
-type AccountInfo<T> = {
-  /** `true` if this account's data contains a loaded program */
-  executable: boolean;
-  /** Identifier of the program that owns the account */
-  owner: PublicKey;
-  /** Number of lamports assigned to the account */
-  lamports: number;
-  /** Optional data assigned to the account */
-  data: T;
-  /** Optional rent epoch info for account */
-  rentEpoch?: number;
-};
-
-type ParsedAccountData = {
-  /** Name of the program that owns this account */
-  program: string;
-  /** Parsed account data */
-  parsed: any;
-  /** Space used by account data */
-  space: number;
-};
-
-type X = RpcResponseAndContext<
-  Array<{
-    pubkey: PublicKey;
-    account: AccountInfo<ParsedAccountData>;
-  }>
->;
 
 export const meta: MetaFunction = () => {
   return [
@@ -101,33 +62,74 @@ function lamportsToTokenUnits(lamports: number, decimals: number) {
   return lamports / Math.pow(10, decimals);
 }
 
+const initialState = {
+  nativeBalance: undefined,
+  tokenAccounts: undefined,
+  sellAmount: "",
+  buyAmount: "",
+  quoteResponse: undefined,
+  fetchingQuote: false,
+  isSwapping: false,
+  transactionReceipt: "",
+};
+
+type ActionTypes =
+  | {
+      type: "set quote response";
+      payload: QuoteResponse | undefined;
+    }
+  | {
+      type: "set token accounts by owner";
+      payload: ParsedTokenAccountsByOwner | undefined;
+    };
+
+const reducer = (state: ReducerState, action: ActionTypes) => {
+  switch (action.type) {
+    case "set quote response":
+      return {
+        ...state,
+        quoteResponse: action.payload,
+      };
+    case "set token accounts by owner":
+      return {
+        ...state,
+      };
+    default:
+      return state;
+  }
+};
+
+export interface ReducerState {
+  nativeBalance: undefined;
+  tokenAccounts: ParsedTokenAccountsByOwner | undefined;
+  sellAmount: string;
+  buyAmount: string;
+  quoteResponse: QuoteResponse | undefined;
+  fetchingQuote: boolean;
+  isSwapping: boolean;
+  transactionReceipt: string;
+}
+
 export default function Index() {
   const providerRef = useRef<PhantomWallet>();
 
   useEffect(() => {
     providerRef.current = getProvider();
   }, []);
-  /*
-  {
-    tokenAccounts: {},
-    sellAmount: "",
-    buyAmount: "",
-    quoteResponse: {}
-    
-  }
-  */
-  const [isFetchingQuote, setIsFetchingQuote] = useState(false);
-  const [nativeBalance, setNativeBalance] = useState<any>();
+
+  const [isFetchingQuote, setIsFetchingQuote] = useState(false); // todo: user reducer
+  const [nativeBalance, setNativeBalance] = useState<any>(); // todo: user reducer
   const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
-  const [tokenAccounts, setTokenAccounts] = useState<X>();
-  const [sellAmount, setSellAmount] = useState<string>("");
-  const [buyAmount, setBuyAmount] = useState<string>("");
+
+  const [sellAmount, setSellAmount] = useState<string>(""); // todo: user reducer
+  const [buyAmount, setBuyAmount] = useState<string>(""); // todo: user reducer
   const debouncedSellAmount: string = useDebounce(sellAmount, 500);
-  const [quoteResponse, setQuoteResponse] = useState<any>(null);
-  const [isSwapping, setIsSwapping] = useState<boolean>(false);
-  const [transactionReceipt, setTransactionReceipt] = useState<string>("");
+  const [isSwapping, setIsSwapping] = useState<boolean>(false); // todo: user reducer
+  const [transactionReceipt, setTransactionReceipt] = useState<string>(""); // todo: user reducer
+
+  const [state, dispatch] = useReducer(reducer, initialState);
 
   const [selectedSellToken, setSelectedSellToken] = useState({
     address: "So11111111111111111111111111111111111111112",
@@ -173,7 +175,10 @@ export default function Index() {
         }
       );
 
-      setTokenAccounts(tokenAccounts);
+      dispatch({
+        type: "set token accounts by owner",
+        payload: tokenAccounts,
+      });
     }
 
     run();
@@ -203,7 +208,8 @@ export default function Index() {
       setIsFetchingQuote(true);
       const response = await fetch(url);
       const data = await response.json();
-      setQuoteResponse(data);
+
+      dispatch({ type: "set quote response", payload: data });
 
       setBuyAmount(
         lamportsToTokenUnits(
@@ -240,8 +246,8 @@ export default function Index() {
   }, [connection, publicKey]);
 
   const sellBalanceSPL = useMemo(() => {
-    if (tokenAccounts) {
-      const [balance] = tokenAccounts.value.filter((v) => {
+    if (state.tokenAccounts) {
+      const [balance] = state.tokenAccounts.value.filter((v) => {
         return v.account.data.parsed.info.mint === selectedSellToken.address;
       });
 
@@ -251,7 +257,7 @@ export default function Index() {
     }
 
     return undefined;
-  }, [tokenAccounts, selectedSellToken]);
+  }, [state.tokenAccounts, selectedSellToken]);
 
   const balanceUi =
     selectedSellToken.address === "So11111111111111111111111111111111111111112"
@@ -308,7 +314,10 @@ export default function Index() {
                     }
                     if (e.target.value === "") {
                       setBuyAmount("");
-                      setQuoteResponse(null);
+                      dispatch({
+                        type: "set quote response",
+                        payload: undefined,
+                      });
                     }
                   }}
                 />
@@ -503,13 +512,13 @@ export default function Index() {
               <button
                 type="button"
                 className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
-                  !quoteResponse || isSwapping || !publicKey
+                  !state.quoteResponse || isSwapping || !publicKey
                     ? "cursor-not-allowed"
                     : "cursor-pointer"
                 }`}
-                disabled={!quoteResponse || isSwapping || isFetchingQuote}
+                disabled={!state.quoteResponse || isSwapping || isFetchingQuote}
                 onClick={async () => {
-                  if (!quoteResponse) return;
+                  if (!state.quoteResponse) return;
 
                   try {
                     setIsSwapping(true);
@@ -518,7 +527,7 @@ export default function Index() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          quoteResponse,
+                          quoteResponse: state.quoteResponse,
                           userPublicKey: publicKey,
                           wrapAndUnwrapSol: true,
                         }),
@@ -545,7 +554,10 @@ export default function Index() {
                     // reset
                     setSellAmount("");
                     setBuyAmount("");
-                    setQuoteResponse(null);
+                    dispatch({
+                      type: "set quote response",
+                      payload: undefined,
+                    });
                     setIsSwapping(false);
                   }
                 }}
