@@ -11,6 +11,8 @@
 [x] doesn't show balance if zero
 [x] successful swap... opens a modal dialog with details?
 [x] and confetti
+[-] refactor state into useReducer
+[ ] handle 500 errors for /quote
 [ ] should have insufficient balance when selling more than balance
 [ ] add spinner to swapping and fetching button
 [ ] max button populates the sell input
@@ -18,7 +20,6 @@
 [ ] handles insufficient balance to sell
 [ ] handles reverts?
 [ ] handless API errors from Jupiter
-[ ] refactor state into useReducer
 [ ] async defer the token list
 [ ] store transactions in local storage or even better in a cookie string
 [ ] tab shows transaction history
