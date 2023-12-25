@@ -27,6 +27,7 @@ import type {
 import { tokenList } from "~/tokenList";
 import { DirectionButton } from "~/components/DirectionButton";
 import styles from "~/tailwind.css";
+import { useDebounce } from "~/hooks";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
@@ -687,20 +688,4 @@ export default function Index() {
       </Modal>
     </main>
   );
-}
-
-function useDebounce(value: any, wait = 250) {
-  const [debounced, setDebounced] = useState(value);
-
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setDebounced(value);
-    }, wait);
-
-    return () => {
-      window.clearTimeout(id);
-    };
-  }, [value, wait]);
-
-  return debounced;
 }
