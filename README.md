@@ -11,9 +11,9 @@
 [x] doesn't show balance if zero
 [x] successful swap... opens a modal dialog with details?
 [x] and confetti
-[-] refactor state into useReducer
-[ ] handle 500 errors for /quote
-[ ] should have insufficient balance when selling more than balance
+[x] refactor state into useReducer
+[x] error UI for swap
+[x] should have insufficient balance error when selling more than balance
 [ ] add spinner to swapping and fetching button
 [ ] max button populates the sell input
 [ ] handles unconnected state?
@@ -25,3 +25,4 @@
 [ ] tab shows transaction history
 [ ] store transactions in pocketbase
 [ ] support coinbase wallet
+[ ] handle 500 errors for /quote

@@ -320,6 +320,12 @@ export default function Index() {
     selectedBuyToken.symbol
   );
 
+  const insufficientBalance =
+    lamportsToTokenUnits(
+      Number(state.quoteResponse?.inAmount),
+      selectedSellToken.decimals
+    ) >= balanceUi?.uiAmount;
+
   return (
     <main
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
@@ -461,7 +467,7 @@ export default function Index() {
               }}
             />
           </div>
-          <div className="sm:flex sm:items-center sm:justify-between bg-green-300 rounded-bl-lg rounded-br-lg p-4">
+          <div className="sm:flex sm:items-center sm:justify-between bg-green-300 rounded-bl-lg rounded-br-lg p-4 mb-2">
             <div className="sm:mr-12">
               <div>
                 <label htmlFor="buy-input" className="text-base font-semibold">
@@ -557,8 +563,13 @@ export default function Index() {
               </ComboBox>
             </div>
           </div>
-          <br />
-          <div className="px-4 sm:px-0">
+          {insufficientBalance && (
+            <div className="text-center bg-red-200 my-2 border border-red-600 rounded-md py-2">
+              Insufficient balance: You don't have enough{" "}
+              {selectedSellToken.symbol}.
+            </div>
+          )}
+          <div className="px-4 sm:px-0 my-2">
             {connected ? (
               <button
                 type="button"
