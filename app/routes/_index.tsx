@@ -25,7 +25,7 @@ import type {
   ParsedTokenAccountsByOwner,
 } from "~/types";
 import { tokenList } from "~/tokenList";
-import { DirectionButton } from "~/components/DirectionButton";
+import { DirectionButton, Spinner } from "~/components";
 import styles from "~/tailwind.css";
 import { useDebounce } from "~/hooks";
 
@@ -633,11 +633,19 @@ export default function Index() {
                   }
                 }}
               >
-                {state.fetchingQuote
-                  ? "Getting best price…"
-                  : state.isSwapping
-                  ? "Swapping…"
-                  : "Swap"}
+                {state.fetchingQuote ? (
+                  <div className="flex justify-center">
+                    <Spinner size={1.75} />
+                    <div className="ml-2">Getting best price…</div>
+                  </div>
+                ) : state.isSwapping ? (
+                  <div className="flex justify-center">
+                    <Spinner size={1.75} />
+                    <div className="ml-2">Swapping…</div>
+                  </div>
+                ) : (
+                  "Swap"
+                )}
               </button>
             ) : (
               <button
