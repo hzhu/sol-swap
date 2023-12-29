@@ -226,10 +226,11 @@ const reducer = (state: ReducerState, action: ActionTypes) => {
     case "reset":
       return {
         ...state,
-        sellAmount: "",
         buyAmount: "",
-        quoteResponse: undefined,
+        sellAmount: "",
         isSwapping: false,
+        transactionReceipt: "",
+        quoteResponse: undefined,
       };
     default:
       return state;
@@ -683,10 +684,8 @@ export default function Index() {
               </button>
             ) : (
               <button
+                onClick={() => setVisible(true)}
                 className="border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full"
-                onClick={() => {
-                  setVisible(true);
-                }}
               >
                 Connect Wallet
               </button>

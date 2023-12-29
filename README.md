@@ -22,6 +22,7 @@
 [ ] clicking trade direction should only make a single fetch to /quote
 [ ] disabled swap button when user types an amount for a token they do not own
 [ ] max button populates the sell input
+[ ] dynamically fetch token list
 [ ] handles unconnected state?
 [ ] handles insufficient balance to sell
 [ ] handles reverts?
