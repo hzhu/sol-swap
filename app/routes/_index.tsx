@@ -72,6 +72,28 @@ const initialState = {
   fetchingQuote: false,
   isSwapping: false,
   transactionReceipt: "",
+  sellSymbolInput: "SOL",
+  buySymbolInput: "USDC",
+  sellToken: {
+    address: "So11111111111111111111111111111111111111112",
+    chainId: 101,
+    decimals: 9,
+    name: "Wrapped SOL",
+    symbol: "SOL",
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+    tags: ["old-registry"],
+  },
+  buyToken: {
+    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    chainId: 101,
+    decimals: 6,
+    name: "USD Coin",
+    symbol: "USDC",
+    logoURI:
+      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+    tags: ["old-registry", "solana-fm"],
+  },
 };
 
 type ActionTypes =
@@ -109,6 +131,22 @@ type ActionTypes =
     }
   | {
       type: "switch trade direction";
+    }
+  | {
+      type: "set sell token";
+      payload: Token;
+    }
+  | {
+      type: "set buy token";
+      payload: Token;
+    }
+  | {
+      type: "set sell symbol input";
+      payload: string;
+    }
+  | {
+      type: "set buy symbol input";
+      payload: string;
     };
 
 const reducer = (state: ReducerState, action: ActionTypes) => {
@@ -143,6 +181,26 @@ const reducer = (state: ReducerState, action: ActionTypes) => {
         ...state,
         buyAmount: action.payload,
       };
+    case "set sell token":
+      return {
+        ...state,
+        sellToken: action.payload,
+      };
+    case "set buy token":
+      return {
+        ...state,
+        buyToken: action.payload,
+      };
+    case "set sell symbol input":
+      return {
+        ...state,
+        sellSymbolInput: action.payload,
+      };
+    case "set buy symbol input":
+      return {
+        ...state,
+        buySymbolInput: action.payload,
+      };
     case "set is swapping":
       return {
         ...state,
@@ -163,6 +221,16 @@ const reducer = (state: ReducerState, action: ActionTypes) => {
   }
 };
 
+interface Token {
+  address: string;
+  chainId: number;
+  decimals: number;
+  name: string;
+  symbol: string;
+  logoURI: string;
+  tags: string[];
+}
+
 export interface ReducerState {
   nativeBalance: undefined;
   tokenAccounts: ParsedTokenAccountsByOwner | undefined;
@@ -172,6 +240,10 @@ export interface ReducerState {
   fetchingQuote: boolean;
   isSwapping: boolean;
   transactionReceipt: string;
+  sellToken: Token;
+  buyToken: Token;
+  sellSymbolInput: string;
+  buySymbolInput: string;
 }
 
 export default function Index() {
@@ -187,26 +259,6 @@ export default function Index() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const debouncedSellAmount: string = useDebounce(state.sellAmount, 500);
 
-  const [selectedSellToken, setSelectedSellToken] = useState({
-    address: "So11111111111111111111111111111111111111112",
-    chainId: 101,
-    decimals: 9,
-    name: "Wrapped SOL",
-    symbol: "SOL",
-    logoURI:
-      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-    tags: ["old-registry"],
-  });
-  const [selectedBuyToken, setSelectedBuyToken] = useState({
-    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    chainId: 101,
-    decimals: 6,
-    name: "USD Coin",
-    symbol: "USDC",
-    logoURI:
-      "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-    tags: ["old-registry", "solana-fm"],
-  });
   const [sellItems, setSellItems] = useState(
     tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
   );
@@ -240,10 +292,10 @@ export default function Index() {
     if (!debouncedSellAmount) return;
     if (debouncedSellAmount.toString() === "") return;
     if (Number(debouncedSellAmount) === 0) return;
-    if (!selectedBuyToken || !selectedSellToken) return;
+    if (!state.buyToken || !state.sellToken) return;
 
     const amountInSmallestUnit =
-      Number(debouncedSellAmount) * Math.pow(10, selectedSellToken.decimals);
+      Number(debouncedSellAmount) * Math.pow(10, state.sellToken.decimals);
 
     if (amountInSmallestUnit.toString().includes(".")) {
       return;
@@ -253,8 +305,8 @@ export default function Index() {
       slippageBps: "25",
       onlyDirectRoutes: "false",
       asLegacyTransaction: "false",
-      inputMint: selectedSellToken.address,
-      outputMint: selectedBuyToken.address,
+      inputMint: state.sellToken.address,
+      outputMint: state.buyToken.address,
       amount: amountInSmallestUnit.toString(),
     }).toString();
 
@@ -271,7 +323,7 @@ export default function Index() {
         type: "set buy amount",
         payload: lamportsToTokenUnits(
           Number(data.outAmount),
-          selectedBuyToken.decimals
+          state.buyToken.decimals
         ).toString(),
       });
 
@@ -279,7 +331,7 @@ export default function Index() {
     }
 
     fetchQuote();
-  }, [debouncedSellAmount, selectedBuyToken, selectedSellToken]);
+  }, [debouncedSellAmount, state.buyToken, state.sellToken]);
 
   useEffect(() => {
     async function run() {
@@ -309,7 +361,7 @@ export default function Index() {
   const sellBalanceSPL = useMemo(() => {
     if (state.tokenAccounts) {
       const [balance] = state.tokenAccounts.value.filter((v) => {
-        return v.account.data.parsed.info.mint === selectedSellToken.address;
+        return v.account.data.parsed.info.mint === state.sellToken.address;
       });
 
       if (balance) {
@@ -318,25 +370,17 @@ export default function Index() {
     }
 
     return undefined;
-  }, [state.tokenAccounts, selectedSellToken]);
+  }, [state.tokenAccounts, state.sellToken]);
 
   const balanceUi =
-    selectedSellToken.address === "So11111111111111111111111111111111111111112"
+    state.sellToken.address === "So11111111111111111111111111111111111111112"
       ? state.nativeBalance
       : sellBalanceSPL;
-
-  const [sellInputValue, setSellInputValue] = useState<string>(
-    selectedSellToken.symbol
-  );
-
-  const [buyInputValue, setBuyInputValue] = useState<string>(
-    selectedBuyToken.symbol
-  );
 
   const insufficientBalance =
     lamportsToTokenUnits(
       Number(state.quoteResponse?.inAmount),
-      selectedSellToken.decimals
+      state.sellToken.decimals
     ) >= balanceUi?.uiAmount;
 
   return (
@@ -358,7 +402,7 @@ export default function Index() {
               <div className="flex w-full">
                 <img
                   className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
-                  src={selectedSellToken.logoURI}
+                  src={state.sellToken.logoURI}
                   alt="sol"
                 />
                 <Input
@@ -400,7 +444,11 @@ export default function Index() {
               // menuTrigger="focus"
               items={sellItems}
               onInputChange={(value: string) => {
-                setSellInputValue(value);
+                dispatch({
+                  type: "set sell symbol input",
+                  payload: value,
+                });
+
                 const filteredList = tokenList.filter((token) => {
                   return token.symbol
                     .toLowerCase()
@@ -408,21 +456,30 @@ export default function Index() {
                 });
                 setSellItems(filteredList.slice(0, 7));
               }}
-              inputValue={sellInputValue}
-              selectedKey={selectedSellToken.address}
+              inputValue={state.sellSymbolInput}
+              selectedKey={state.sellToken.address}
               onSelectionChange={(id) => {
                 const selectedItem = sellItems.find((o) => o.address === id);
                 if (!selectedItem) return;
 
                 // if selected item is the same as the buy token, swap them
-                if (selectedItem?.address === selectedBuyToken.address) {
-                  setSelectedBuyToken(selectedSellToken);
-                  setSelectedSellToken(selectedBuyToken);
-                  setSellInputValue(selectedBuyToken.symbol);
-                  setBuyInputValue(selectedSellToken.symbol);
+                if (selectedItem?.address === state.buyToken.address) {
+                  dispatch({ type: "set buy token", payload: state.sellToken });
+                  dispatch({ type: "set sell token", payload: state.buyToken });
+                  dispatch({
+                    type: "set sell symbol input",
+                    payload: state.buyToken.symbol,
+                  });
+                  dispatch({
+                    type: "set buy symbol input",
+                    payload: state.sellToken.symbol,
+                  });
                 } else {
-                  setSelectedSellToken(selectedItem);
-                  setSellInputValue(selectedItem.symbol);
+                  dispatch({ type: "set sell token", payload: selectedItem });
+                  dispatch({
+                    type: "set sell symbol input",
+                    payload: selectedItem.symbol,
+                  });
                 }
               }}
             >
@@ -471,10 +528,16 @@ export default function Index() {
               className="border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
               disabled={state.isSwapping || state.fetchingQuote}
               onClick={() => {
-                setSelectedBuyToken(selectedSellToken);
-                setSelectedSellToken(selectedBuyToken);
-                setSellInputValue(selectedBuyToken.symbol);
-                setBuyInputValue(selectedSellToken.symbol);
+                dispatch({ type: "set buy token", payload: state.sellToken });
+                dispatch({ type: "set sell token", payload: state.buyToken });
+                dispatch({
+                  type: "set sell symbol input",
+                  payload: state.buyToken.symbol,
+                });
+                dispatch({
+                  type: "set buy symbol input",
+                  payload: state.sellToken.symbol,
+                });
                 dispatch({ type: "switch trade direction" });
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
@@ -490,7 +553,7 @@ export default function Index() {
                 <div className="flex items-center">
                   <img
                     className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
-                    src={selectedBuyToken.logoURI}
+                    src={state.buyToken.logoURI}
                     alt="sol"
                   />
                   <input
@@ -511,7 +574,10 @@ export default function Index() {
               <ComboBox
                 items={buyItems}
                 onInputChange={(value: string) => {
-                  setBuyInputValue(value);
+                  dispatch({
+                    type: "set buy symbol input",
+                    payload: value,
+                  });
                   const newItems = tokenList.filter((token) => {
                     return token.symbol
                       .toLowerCase()
@@ -519,21 +585,41 @@ export default function Index() {
                   });
                   setBuyItems(newItems.slice(0, 7));
                 }}
-                inputValue={buyInputValue}
-                selectedKey={selectedBuyToken.address}
+                inputValue={state.buySymbolInput}
+                selectedKey={state.buyToken.address}
                 onSelectionChange={(id) => {
                   const selectedItem = buyItems.find((o) => o.address === id);
                   if (!selectedItem) return;
 
                   // if selected item is the same as the buy token, swap them
-                  if (selectedItem?.address === selectedSellToken.address) {
-                    setSelectedBuyToken(selectedSellToken);
-                    setSelectedSellToken(selectedBuyToken);
-                    setSellInputValue(selectedBuyToken.symbol);
-                    setBuyInputValue(selectedSellToken.symbol);
+                  if (selectedItem?.address === state.sellToken.address) {
+                    dispatch({
+                      type: "set buy token",
+                      payload: state.sellToken,
+                    });
+                    dispatch({
+                      type: "set sell token",
+                      payload: state.buyToken,
+                    });
+                    dispatch({
+                      type: "set sell symbol input",
+                      payload: state.buyToken.symbol,
+                    });
+                    dispatch({
+                      type: "set buy symbol input",
+                      payload: state.sellToken.symbol,
+                    });
                   } else {
-                    selectedItem && setSelectedBuyToken(selectedItem);
-                    selectedItem && setBuyInputValue(selectedItem.symbol);
+                    selectedItem &&
+                      dispatch({
+                        type: "set buy token",
+                        payload: selectedItem,
+                      });
+                    selectedItem &&
+                      dispatch({
+                        type: "set buy symbol input",
+                        payload: selectedItem.symbol,
+                      });
                   }
                 }}
               >
@@ -580,7 +666,7 @@ export default function Index() {
           {insufficientBalance && (
             <div className="text-center bg-red-200 my-2 border border-red-600 rounded-md py-2">
               Insufficient balance: You don't have enough{" "}
-              {selectedSellToken.symbol}.
+              {state.sellToken.symbol}.
             </div>
           )}
           <div className="px-4 sm:px-0 my-2">
