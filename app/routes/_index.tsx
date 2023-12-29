@@ -438,7 +438,7 @@ export default function Index() {
                       textValue={item.symbol}
                       key={item.address}
                       id={item.address}
-                      className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-purple-900 data-[hovered]:dark:bg-purple-800 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                      className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[focused]:bg-purple-900 data-[focused]:dark:bg-purple-800 data-[focused]:text-white data-[disabled]:bg-gray-100"
                     >
                       <img
                         src={item.logoURI}
@@ -547,7 +547,7 @@ export default function Index() {
                         textValue={item.symbol}
                         key={item.address}
                         id={item.address}
-                        className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[hovered]:bg-purple-900 data-[hovered]:dark:bg-purple-800 data-[hovered]:text-white data-[disabled]:bg-gray-100"
+                        className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[disabled]:bg-gray-100"
                       >
                         <img
                           src={item.logoURI}

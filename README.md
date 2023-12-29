@@ -14,7 +14,8 @@
 [x] refactor state into useReducer
 [x] error UI for swap
 [x] should have insufficient balance error when selling more than balance
-[ ] add spinner to swapping and fetching button
+[x] add spinner to swapping and fetching button
+[x] fix broken keyboard navigation styling on comboboxes
 [ ] max button populates the sell input
 [ ] handles unconnected state?
 [ ] handles insufficient balance to sell
