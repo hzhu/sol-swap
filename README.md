@@ -16,6 +16,8 @@
 [x] should have insufficient balance error when selling more than balance
 [x] add spinner to swapping and fetching button
 [x] fix broken keyboard navigation styling on comboboxes
+[ ] refactor selected sell token + selected symbol to reducer
+[ ] clicking trade direction should only make a single fetch to /quote
 [ ] max button populates the sell input
 [ ] handles unconnected state?
 [ ] handles insufficient balance to sell

@@ -106,10 +106,18 @@ type ActionTypes =
   | {
       type: "set native balance";
       payload: any;
+    }
+  | {
+      type: "switch trade direction";
     };
 
 const reducer = (state: ReducerState, action: ActionTypes) => {
   switch (action.type) {
+    case "switch trade direction":
+      return {
+        ...state,
+        sellAmount: state.buyAmount,
+      };
     case "set quote response":
       return {
         ...state,
@@ -236,6 +244,10 @@ export default function Index() {
 
     const amountInSmallestUnit =
       Number(debouncedSellAmount) * Math.pow(10, selectedSellToken.decimals);
+
+    if (amountInSmallestUnit.toString().includes(".")) {
+      return;
+    }
 
     const searchParams = new URLSearchParams({
       slippageBps: "25",
@@ -463,6 +475,7 @@ export default function Index() {
                 setSelectedSellToken(selectedBuyToken);
                 setSellInputValue(selectedBuyToken.symbol);
                 setBuyInputValue(selectedSellToken.symbol);
+                dispatch({ type: "switch trade direction" });
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
               }}
