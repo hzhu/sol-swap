@@ -76,9 +76,10 @@ export default function Index() {
 
   useEffect(() => {
     if (!debouncedSellAmount) return;
-    if (debouncedSellAmount.toString() === "") return;
     if (Number(debouncedSellAmount) === 0) return;
     if (!state.buyToken || !state.sellToken) return;
+    if (debouncedSellAmount.toString() === "") return;
+    if (state.sellAmount !== debouncedSellAmount) return;
 
     const amountInSmallestUnit =
       Number(debouncedSellAmount) * Math.pow(10, state.sellToken.decimals);
@@ -105,7 +106,7 @@ export default function Index() {
     }
 
     fetchQuote();
-  }, [debouncedSellAmount, state.buyToken, state.sellToken]);
+  }, [debouncedSellAmount, state.sellAmount, state.buyToken, state.sellToken]);
 
   useEffect(() => {
     async function run() {

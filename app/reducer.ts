@@ -111,10 +111,12 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
       return {
         ...state,
         sellAmount: state.buyAmount,
+        buyAmount: "",
         buyToken: state.sellToken,
         sellToken: state.buyToken,
         sellSymbolInput: state.buyToken.symbol,
         buySymbolInput: state.sellToken.symbol,
+        fetchingQuote: state.sellAmount !== "",
       };
     case "set quote response":
       const buyAmount = action.payload
@@ -123,7 +125,6 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
             state.buyToken.decimals
           ).toString()
         : state.buyAmount;
-
       return {
         ...state,
         buyAmount,

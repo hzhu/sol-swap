@@ -19,9 +19,10 @@
 [x] refactor selected sell token + selected symbol to reducer
 [x] general refactor to clean up reducer state
 [x] move reducer into its own file
-[ ] clicking trade direction should only make a single fetch to /quote
+[x] clicking trade direction should only make a single fetch to /quote
 [ ] disabled swap button when user types an amount for a token they do not own
 [ ] max button populates the sell input
+[ ] show "trending" suggestions as the initial suggestions
 [ ] dynamically fetch token list
 [ ] handles unconnected state?
 [ ] handles insufficient balance to sell
