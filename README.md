@@ -17,7 +17,8 @@
 [x] add spinner to swapping and fetching button
 [x] fix broken keyboard navigation styling on comboboxes
 [x] refactor selected sell token + selected symbol to reducer
-[ ] general refactor to clean up reducer state
+[x] general refactor to clean up reducer state
+[ ] move reducer into its own file
 [ ] clicking trade direction should only make a single fetch to /quote
 [ ] disabled swap button when user types an amount for a token they do not own
 [ ] max button populates the sell input

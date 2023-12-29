@@ -1,4 +1,10 @@
 import Confetti from "react-confetti";
+import { Form } from "@remix-run/react";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { VersionedTransaction, PublicKey } from "@solana/web3.js";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   Button,
   ComboBox,
@@ -12,31 +18,23 @@ import {
   Heading,
   Modal,
 } from "react-aria-components";
-import type { MetaFunction, LinksFunction } from "@remix-run/node";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { VersionedTransaction, PublicKey } from "@solana/web3.js";
-import { Form } from "@remix-run/react";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useDebounce } from "~/hooks";
+import { tokenList } from "~/tokenList";
+import { DirectionButton, Spinner } from "~/components";
 import type {
   PhantomWallet,
   QuoteResponse,
   ParsedTokenAccountsByOwner,
 } from "~/types";
-import { tokenList } from "~/tokenList";
-import { DirectionButton, Spinner } from "~/components";
+import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import styles from "~/tailwind.css";
-import { useDebounce } from "~/hooks";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
 // Extend the Window interface
 declare global {
   interface Window {
-    phantom?: {
-      solana: PhantomWallet;
-    };
+    phantom?: { solana: PhantomWallet };
   }
 }
 
@@ -130,7 +128,7 @@ type ActionTypes =
       payload: any;
     }
   | {
-      type: "switch trade direction";
+      type: "reverse trade direction";
     }
   | {
       type: "set sell token";
@@ -147,14 +145,21 @@ type ActionTypes =
   | {
       type: "set buy symbol input";
       payload: string;
+    }
+  | {
+      type: "reset";
     };
 
 const reducer = (state: ReducerState, action: ActionTypes) => {
   switch (action.type) {
-    case "switch trade direction":
+    case "reverse trade direction":
       return {
         ...state,
         sellAmount: state.buyAmount,
+        buyToken: state.sellToken,
+        sellToken: state.buyToken,
+        sellSymbolInput: state.buyToken.symbol,
+        buySymbolInput: state.sellToken.symbol,
       };
     case "set quote response":
       return {
@@ -185,11 +190,13 @@ const reducer = (state: ReducerState, action: ActionTypes) => {
       return {
         ...state,
         sellToken: action.payload,
+        sellSymbolInput: action.payload.symbol,
       };
     case "set buy token":
       return {
         ...state,
         buyToken: action.payload,
+        buySymbolInput: action.payload.symbol,
       };
     case "set sell symbol input":
       return {
@@ -215,6 +222,14 @@ const reducer = (state: ReducerState, action: ActionTypes) => {
       return {
         ...state,
         nativeBalance: action.payload,
+      };
+    case "reset":
+      return {
+        ...state,
+        sellAmount: "",
+        buyAmount: "",
+        quoteResponse: undefined,
+        isSwapping: false,
       };
     default:
       return state;
@@ -258,11 +273,9 @@ export default function Index() {
   const { publicKey, connected } = useWallet();
   const [state, dispatch] = useReducer(reducer, initialState);
   const debouncedSellAmount: string = useDebounce(state.sellAmount, 500);
-
   const [sellItems, setSellItems] = useState(
     tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
   );
-
   const [buyItems, setBuyItems] = useState(
     tokenList.filter((item) => item.symbol.toLowerCase().includes("usdc"))
   );
@@ -389,7 +402,7 @@ export default function Index() {
       className="sm:max-w-2xl mx-auto text-lg mt-10 sm:mt-40"
     >
       <section>
-        <h1 className="text-center text-4xl mt-6 mb-3">solswap</h1>
+        <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Form>
           <div className="sm:flex sm:justify-between bg-purple-300 sm:rounded-tl-lg sm:rounded-tr-lg p-4 pb-8 sm:pb-4">
             <div>
@@ -401,23 +414,23 @@ export default function Index() {
               </label>
               <div className="flex w-full">
                 <img
-                  className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
-                  src={state.sellToken.logoURI}
                   alt="sol"
+                  src={state.sellToken.logoURI}
+                  className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
                 />
                 <Input
-                  type="text"
                   name="sol"
-                  placeholder="0.0"
-                  value={state.sellAmount}
-                  inputMode="decimal"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  pattern="^[0-9]*[.,]?[0-9]*$"
+                  type="text"
                   minLength={1}
-                  id="sell-input"
                   maxLength={50}
+                  id="sell-input"
+                  placeholder="0.0"
+                  autoCorrect="off"
+                  autoComplete="off"
                   spellCheck="false"
+                  inputMode="decimal"
+                  value={state.sellAmount}
+                  pattern="^[0-9]*[.,]?[0-9]*$"
                   className="px-3 py-2 rounded-lg border w-full border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
                   onChange={(e) => {
                     if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
@@ -441,14 +454,13 @@ export default function Index() {
               </Text>
             </div>
             <ComboBox
-              // menuTrigger="focus"
+              menuTrigger="focus"
               items={sellItems}
               onInputChange={(value: string) => {
                 dispatch({
                   type: "set sell symbol input",
                   payload: value,
                 });
-
                 const filteredList = tokenList.filter((token) => {
                   return token.symbol
                     .toLowerCase()
@@ -461,25 +473,10 @@ export default function Index() {
               onSelectionChange={(id) => {
                 const selectedItem = sellItems.find((o) => o.address === id);
                 if (!selectedItem) return;
-
-                // if selected item is the same as the buy token, swap them
                 if (selectedItem?.address === state.buyToken.address) {
-                  dispatch({ type: "set buy token", payload: state.sellToken });
-                  dispatch({ type: "set sell token", payload: state.buyToken });
-                  dispatch({
-                    type: "set sell symbol input",
-                    payload: state.buyToken.symbol,
-                  });
-                  dispatch({
-                    type: "set buy symbol input",
-                    payload: state.sellToken.symbol,
-                  });
+                  dispatch({ type: "reverse trade direction" });
                 } else {
                   dispatch({ type: "set sell token", payload: selectedItem });
-                  dispatch({
-                    type: "set sell symbol input",
-                    payload: selectedItem.symbol,
-                  });
                 }
               }}
             >
@@ -490,30 +487,20 @@ export default function Index() {
                 <Input className="px-3 py-2 rounded-lg border w-full border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900" />
                 <Button>🔍</Button>
               </div>
-
               <Popover>
                 <ListBox>
-                  {(item: {
-                    address: string;
-                    chainId: number;
-                    decimals: number;
-                    name: string;
-                    symbol: string;
-                    logoURI: string;
-                    tags: string[];
-                    extensions: any;
-                  }) => (
+                  {(item: Token) => (
                     <ListBoxItem
-                      textValue={item.symbol}
-                      key={item.address}
                       id={item.address}
+                      key={item.address}
+                      textValue={item.symbol}
                       className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[focused]:bg-purple-900 data-[focused]:dark:bg-purple-800 data-[focused]:text-white data-[disabled]:bg-gray-100"
                     >
                       <img
-                        src={item.logoURI}
                         alt={item.symbol}
-                        style={{ width: "1.5rem", height: "1.5rem" }}
+                        src={item.logoURI}
                         className="rounded-full"
+                        style={{ width: "1.5rem", height: "1.5rem" }}
                       />
                       &nbsp;
                       <span>{item.symbol}</span>
@@ -525,23 +512,13 @@ export default function Index() {
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton
-              className="border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
               disabled={state.isSwapping || state.fetchingQuote}
               onClick={() => {
-                dispatch({ type: "set buy token", payload: state.sellToken });
-                dispatch({ type: "set sell token", payload: state.buyToken });
-                dispatch({
-                  type: "set sell symbol input",
-                  payload: state.buyToken.symbol,
-                });
-                dispatch({
-                  type: "set buy symbol input",
-                  payload: state.sellToken.symbol,
-                });
-                dispatch({ type: "switch trade direction" });
+                dispatch({ type: "reverse trade direction" });
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
               }}
+              className="border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
             />
           </div>
           <div className="sm:flex sm:items-center sm:justify-between bg-green-300 rounded-bl-lg rounded-br-lg p-4 mb-2">
@@ -552,32 +529,28 @@ export default function Index() {
                 </label>
                 <div className="flex items-center">
                   <img
-                    className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
-                    src={state.buyToken.logoURI}
                     alt="sol"
+                    src={state.buyToken.logoURI}
+                    className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
                   />
                   <input
                     disabled
                     type="text"
                     id="buy-input"
                     name="buy-input"
-                    value={state.buyAmount}
                     placeholder="0.0"
-                    onChange={() => {}}
+                    value={state.buyAmount}
                     className="px-3 py-2 rounded-lg border cursor-not-allowed bg-gray-200 w-full"
                   />
                 </div>
               </div>
             </div>
-
             <div>
               <ComboBox
+                menuTrigger="focus"
                 items={buyItems}
                 onInputChange={(value: string) => {
-                  dispatch({
-                    type: "set buy symbol input",
-                    payload: value,
-                  });
+                  dispatch({ type: "set buy symbol input", payload: value });
                   const newItems = tokenList.filter((token) => {
                     return token.symbol
                       .toLowerCase()
@@ -590,35 +563,13 @@ export default function Index() {
                 onSelectionChange={(id) => {
                   const selectedItem = buyItems.find((o) => o.address === id);
                   if (!selectedItem) return;
-
-                  // if selected item is the same as the buy token, swap them
                   if (selectedItem?.address === state.sellToken.address) {
-                    dispatch({
-                      type: "set buy token",
-                      payload: state.sellToken,
-                    });
-                    dispatch({
-                      type: "set sell token",
-                      payload: state.buyToken,
-                    });
-                    dispatch({
-                      type: "set sell symbol input",
-                      payload: state.buyToken.symbol,
-                    });
-                    dispatch({
-                      type: "set buy symbol input",
-                      payload: state.sellToken.symbol,
-                    });
+                    dispatch({ type: "reverse trade direction" });
                   } else {
                     selectedItem &&
                       dispatch({
                         type: "set buy token",
                         payload: selectedItem,
-                      });
-                    selectedItem &&
-                      dispatch({
-                        type: "set buy symbol input",
-                        payload: selectedItem.symbol,
                       });
                   }
                 }}
@@ -632,27 +583,18 @@ export default function Index() {
                 </div>
                 <Popover>
                   <ListBox>
-                    {(item: {
-                      address: string;
-                      chainId: number;
-                      decimals: number;
-                      name: string;
-                      symbol: string;
-                      logoURI: string;
-                      tags: string[];
-                      extensions: any;
-                    }) => (
+                    {(item: Token) => (
                       <ListBoxItem
-                        textValue={item.symbol}
-                        key={item.address}
                         id={item.address}
-                        className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[disabled]:bg-gray-100"
+                        key={item.address}
+                        textValue={item.symbol}
+                        className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[focused]:bg-purple-900 data-[focused]:dark:bg-purple-800 data-[focused]:text-white data-[disabled]:bg-gray-100"
                       >
                         <img
-                          src={item.logoURI}
                           alt={item.symbol}
-                          style={{ width: "1.5rem", height: "1.5rem" }}
+                          src={item.logoURI}
                           className="rounded-full"
+                          style={{ width: "1.5rem", height: "1.5rem" }}
                         />
                         &nbsp;
                         <span>{item.symbol}</span>
@@ -721,14 +663,7 @@ export default function Index() {
                   } catch (err) {
                     console.error(err);
                   } finally {
-                    // reset
-                    dispatch({ type: "set sell amount", payload: "" });
-                    dispatch({ type: "set buy amount", payload: "" });
-                    dispatch({
-                      type: "set quote response",
-                      payload: undefined,
-                    });
-                    dispatch({ type: "set is swapping", payload: false });
+                    dispatch({ type: "reset" });
                   }
                 }}
               >
