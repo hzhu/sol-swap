@@ -105,3 +105,13 @@ export type ParsedTokenAccountsByOwner = RpcResponseAndContext<
     account: AccountInfo<ParsedAccountData>;
   }>
 >;
+
+export interface Token {
+  address: string;
+  chainId: number;
+  decimals: number;
+  name: string;
+  symbol: string;
+  logoURI: string;
+  tags: string[];
+}
