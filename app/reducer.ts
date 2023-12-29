@@ -1,4 +1,5 @@
 import type { Token, QuoteResponse, ParsedTokenAccountsByOwner } from "~/types";
+import { lamportsToTokenUnits } from "./utils";
 
 export interface ReducerState {
   sellToken: Token;
@@ -116,8 +117,16 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
         buySymbolInput: state.sellToken.symbol,
       };
     case "set quote response":
+      const buyAmount = action.payload
+        ? lamportsToTokenUnits(
+            Number(action.payload.outAmount),
+            state.buyToken.decimals
+          ).toString()
+        : state.buyAmount;
+
       return {
         ...state,
+        buyAmount,
         quoteResponse: action.payload,
       };
     case "set token accounts by owner":

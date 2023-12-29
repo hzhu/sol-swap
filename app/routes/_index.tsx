@@ -22,18 +22,12 @@ import { useDebounce } from "~/hooks";
 import { tokenList } from "~/tokenList";
 import { initialState, reducer } from "~/reducer";
 import { DirectionButton, Spinner } from "~/components";
+import { getProvider, lamportsToTokenUnits } from "~/utils";
 import type { Token, PhantomWallet } from "~/types";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import styles from "~/tailwind.css";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
-
-// Extend the Window interface
-declare global {
-  interface Window {
-    phantom?: { solana: PhantomWallet };
-  }
-}
 
 export const meta: MetaFunction = () => {
   return [
@@ -41,22 +35,6 @@ export const meta: MetaFunction = () => {
     { name: "description", content: "Welcome to Remix!" },
   ];
 };
-
-const getProvider = () => {
-  if ("phantom" in window) {
-    const provider = window.phantom?.solana;
-
-    if (provider?.isPhantom) {
-      return provider;
-    }
-  }
-
-  window.open("https://phantom.app/", "_blank");
-};
-
-function lamportsToTokenUnits(lamports: number, decimals: number) {
-  return lamports / Math.pow(10, decimals);
-}
 
 export default function Index() {
   const providerRef = useRef<PhantomWallet>();
@@ -122,17 +100,7 @@ export default function Index() {
       dispatch({ type: "fetching quote", payload: true });
       const response = await fetch(url);
       const data = await response.json();
-
       dispatch({ type: "set quote response", payload: data });
-
-      dispatch({
-        type: "set buy amount",
-        payload: lamportsToTokenUnits(
-          Number(data.outAmount),
-          state.buyToken.decimals
-        ).toString(),
-      });
-
       dispatch({ type: "fetching quote", payload: false });
     }
 
@@ -191,8 +159,8 @@ export default function Index() {
 
   return (
     <main
-      style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
       className="sm:max-w-2xl mx-auto text-lg mt-10 sm:mt-40"
+      style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
     >
       <section>
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
@@ -263,7 +231,7 @@ export default function Index() {
               onSelectionChange={(id) => {
                 const selectedItem = sellItems.find((o) => o.address === id);
                 if (!selectedItem) return;
-                if (selectedItem?.address === state.buyToken.address) {
+                if (selectedItem.address === state.buyToken.address) {
                   dispatch({ type: "reverse trade direction" });
                 } else {
                   dispatch({ type: "set sell token", payload: selectedItem });
@@ -304,9 +272,9 @@ export default function Index() {
             <DirectionButton
               disabled={state.isSwapping || state.fetchingQuote}
               onClick={() => {
-                dispatch({ type: "reverse trade direction" });
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
+                dispatch({ type: "reverse trade direction" });
               }}
               className="border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
             />
@@ -353,7 +321,7 @@ export default function Index() {
                 onSelectionChange={(id) => {
                   const selectedItem = buyItems.find((o) => o.address === id);
                   if (!selectedItem) return;
-                  if (selectedItem?.address === state.sellToken.address) {
+                  if (selectedItem.address === state.sellToken.address) {
                     dispatch({ type: "reverse trade direction" });
                   } else {
                     selectedItem &&

@@ -7,6 +7,12 @@ import type {
 } from "@solana/web3.js";
 import { type EventEmitter } from "@solana/wallet-adapter-base";
 
+declare global {
+  interface Window {
+    phantom?: { solana: PhantomWallet };
+  }
+}
+
 interface PhantomWalletEvents {
   connect(...args: unknown[]): unknown;
   disconnect(...args: unknown[]): unknown;
