@@ -1,6 +1,13 @@
 import type { Token, QuoteResponse, ParsedTokenAccountsByOwner } from "~/types";
 import { lamportsToTokenUnits } from "./utils";
 
+interface Balance {
+  uiAmount: number;
+  uiAmountString: string;
+  amount: string;
+  decimals: number;
+}
+
 export interface ReducerState {
   sellToken: Token;
   buyToken: Token;
@@ -11,8 +18,8 @@ export interface ReducerState {
   isSwapping: boolean;
   fetchingQuote: boolean;
   transactionReceipt: string;
+  balance: Balance | undefined;
   quoteResponse: QuoteResponse | undefined;
-  nativeBalance: undefined;
   tokenAccounts: ParsedTokenAccountsByOwner | undefined;
 }
 
@@ -46,8 +53,8 @@ export type ActionTypes =
       payload: string;
     }
   | {
-      type: "set native balance";
-      payload: any;
+      type: "set balance";
+      payload: Balance;
     }
   | {
       type: "reverse trade direction";
@@ -73,7 +80,7 @@ export type ActionTypes =
     };
 
 export const initialState = {
-  nativeBalance: undefined,
+  balance: undefined,
   tokenAccounts: undefined,
   sellAmount: "",
   buyAmount: "",
@@ -182,10 +189,10 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
         ...state,
         transactionReceipt: action.payload,
       };
-    case "set native balance":
+    case "set balance":
       return {
         ...state,
-        nativeBalance: action.payload,
+        balance: action.payload,
       };
     case "reset":
       return {

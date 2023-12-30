@@ -118,7 +118,7 @@ export default function Index() {
         const uiAmount = lamportsToTokenUnits(balance, 9);
 
         dispatch({
-          type: "set native balance",
+          type: "set balance",
           payload: {
             uiAmount,
             uiAmountString: uiAmount.toString(),
@@ -149,7 +149,7 @@ export default function Index() {
 
   const balanceUi =
     state.sellToken.address === "So11111111111111111111111111111111111111112"
-      ? state.nativeBalance
+      ? state.balance
       : sellBalanceSPL;
 
   const insufficientBalance =
