@@ -2,7 +2,7 @@ import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { VersionedTransaction, PublicKey } from "@solana/web3.js";
+import { VersionedTransaction } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
@@ -18,7 +18,7 @@ import {
   Heading,
   Modal,
 } from "react-aria-components";
-import { useDebounce } from "~/hooks";
+import { useBalance, useDebounce } from "~/hooks";
 import { tokenList } from "~/tokenList";
 import { initialState, reducer } from "~/reducer";
 import { DirectionButton, Spinner } from "~/components";
@@ -108,30 +108,7 @@ export default function Index() {
     fetchQuote();
   }, [debouncedSellAmount, state.sellAmount, state.buyToken, state.sellToken]);
 
-  useEffect(() => {
-    async function run() {
-      if (publicKey) {
-        const balance = await connection.getBalance(
-          new PublicKey(publicKey.toString())
-        );
-
-        const uiAmount = lamportsToTokenUnits(balance, 9);
-
-        dispatch({
-          type: "set balance",
-          payload: {
-            uiAmount,
-            uiAmountString: uiAmount.toString(),
-            amount: balance.toString(),
-            decimals: 9,
-          },
-        });
-      }
-    }
-    if (publicKey) {
-      run();
-    }
-  }, [connection, publicKey]);
+  const balance = useBalance({ publicKey, connection });
 
   const sellBalanceSPL = useMemo(() => {
     if (state.tokenAccounts) {
@@ -149,7 +126,7 @@ export default function Index() {
 
   const balanceUi =
     state.sellToken.address === "So11111111111111111111111111111111111111112"
-      ? state.balance
+      ? balance
       : sellBalanceSPL;
 
   const insufficientBalance =

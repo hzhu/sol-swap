@@ -121,3 +121,10 @@ export interface Token {
   logoURI: string;
   tags: string[];
 }
+
+export interface Balance {
+  uiAmount: number;
+  uiAmountString: string;
+  amount: string;
+  decimals: number;
+}

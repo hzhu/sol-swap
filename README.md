@@ -21,7 +21,7 @@
 [x] move reducer into its own file
 [x] clicking trade direction should only make a single fetch to /quote
 [x] disabled swap button when user types an amount for a token they do not own
-[ ] refactor and create useBalance
+[x] refactor and create useBalance
 [ ] refactor and create useQuote + remove fetching state from reducer
 [ ] max button populates the sell input
 [ ] show "trending" suggestions as the initial suggestions
