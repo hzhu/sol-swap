@@ -20,10 +20,13 @@
 [x] general refactor to clean up reducer state
 [x] move reducer into its own file
 [x] clicking trade direction should only make a single fetch to /quote
-[ ] disabled swap button when user types an amount for a token they do not own
+[x] disabled swap button when user types an amount for a token they do not own
+[ ] refactor and create useBalance
+[ ] refactor and create useQuote + remove fetching state from reducer
 [ ] max button populates the sell input
 [ ] show "trending" suggestions as the initial suggestions
 [ ] dynamically fetch token list
+[ ] persist token list in index db
 [ ] handles unconnected state?
 [ ] handles insufficient balance to sell
 [ ] handles reverts?
@@ -34,3 +37,5 @@
 [ ] store transactions in pocketbase
 [ ] support coinbase wallet
 [ ] handle 500 errors for /quote
+[ ] works well as a PWA
+[ ] round 1 design updates

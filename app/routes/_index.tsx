@@ -153,10 +153,12 @@ export default function Index() {
       : sellBalanceSPL;
 
   const insufficientBalance =
-    lamportsToTokenUnits(
-      Number(state.quoteResponse?.inAmount),
-      state.sellToken.decimals
-    ) >= balanceUi?.uiAmount;
+    balanceUi === undefined && state.sellAmount !== ""
+      ? true
+      : lamportsToTokenUnits(
+          Number(state.quoteResponse?.inAmount),
+          state.sellToken.decimals
+        ) >= balanceUi?.uiAmount;
 
   return (
     <main
@@ -374,15 +376,16 @@ export default function Index() {
             {connected ? (
               <button
                 type="button"
-                className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full ${
+                className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full disabled:cursor-not-allowed ${
                   !state.quoteResponse || state.isSwapping || !publicKey
                     ? "cursor-not-allowed"
                     : "cursor-pointer"
                 }`}
                 disabled={
-                  !state.quoteResponse ||
                   state.isSwapping ||
-                  state.fetchingQuote
+                  state.fetchingQuote ||
+                  !state.quoteResponse ||
+                  insufficientBalance
                 }
                 onClick={async () => {
                   if (!state.quoteResponse) return;
