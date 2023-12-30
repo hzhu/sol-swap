@@ -18,10 +18,10 @@ import {
   Heading,
   Modal,
 } from "react-aria-components";
-import { useBalance, useDebounce } from "~/hooks";
 import { tokenList } from "~/tokenList";
 import { initialState, reducer } from "~/reducer";
 import { DirectionButton, Spinner } from "~/components";
+import { useQuote, useBalance, useDebounce } from "~/hooks";
 import { getProvider, lamportsToTokenUnits } from "~/utils";
 import type { Token, PhantomWallet } from "~/types";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
@@ -46,6 +46,7 @@ export default function Index() {
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
+  const balance = useBalance({ publicKey, connection });
   const [state, dispatch] = useReducer(reducer, initialState);
   const debouncedSellAmount: string = useDebounce(state.sellAmount, 500);
   const [sellItems, setSellItems] = useState(
@@ -74,41 +75,7 @@ export default function Index() {
     run();
   }, [connection, publicKey]);
 
-  useEffect(() => {
-    if (!debouncedSellAmount) return;
-    if (Number(debouncedSellAmount) === 0) return;
-    if (!state.buyToken || !state.sellToken) return;
-    if (debouncedSellAmount.toString() === "") return;
-    if (state.sellAmount !== debouncedSellAmount) return;
-
-    const amountInSmallestUnit =
-      Number(debouncedSellAmount) * Math.pow(10, state.sellToken.decimals);
-
-    if (amountInSmallestUnit.toString().includes(".")) return;
-
-    const searchParams = new URLSearchParams({
-      slippageBps: "25",
-      onlyDirectRoutes: "false",
-      asLegacyTransaction: "false",
-      inputMint: state.sellToken.address,
-      outputMint: state.buyToken.address,
-      amount: amountInSmallestUnit.toString(),
-    }).toString();
-
-    const url = `/quote?${searchParams}`;
-
-    async function fetchQuote() {
-      dispatch({ type: "fetching quote", payload: true });
-      const response = await fetch(url);
-      const data = await response.json();
-      dispatch({ type: "set quote response", payload: data });
-      dispatch({ type: "fetching quote", payload: false });
-    }
-
-    fetchQuote();
-  }, [debouncedSellAmount, state.sellAmount, state.buyToken, state.sellToken]);
-
-  const balance = useBalance({ publicKey, connection });
+  useQuote({ state, dispatch, debouncedSellAmount });
 
   const sellBalanceSPL = useMemo(() => {
     if (state.tokenAccounts) {
