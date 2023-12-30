@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cssBundleHref } from "@remix-run/css-bundle";
 import type { LinksFunction, MetaFunction } from "@remix-run/node";
 import {
@@ -8,7 +9,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import React, { FC, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -77,6 +78,8 @@ export default function App() {
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => setIsMounted(true), []);
 
+  const queryClient = new QueryClient();
+
   return (
     <html lang="en">
       <head>
@@ -97,7 +100,9 @@ export default function App() {
                     <WalletDisconnectButton />
                   </div>
                 )}
-                <Outlet />
+                <QueryClientProvider client={queryClient}>
+                  <Outlet />
+                </QueryClientProvider>
               </WalletModalProvider>
             </WalletProvider>
           </ConnectionProvider>
