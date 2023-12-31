@@ -8,13 +8,15 @@ export function useTokenBalance({
   token,
   connection,
   publicKey,
+  transactionReceipt,
 }: {
   token: Token;
   connection: Connection;
   publicKey: PublicKey | null;
+  transactionReceipt: string;
 }) {
   const { data: tokenAccounts } = useQuery({
-    queryKey: [publicKey],
+    queryKey: [publicKey, `${transactionReceipt}-tokenBalance`],
     queryFn: async () => {
       if (!publicKey) return Promise.resolve(null);
       return connection.getParsedTokenAccountsByOwner(publicKey, {

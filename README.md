@@ -41,3 +41,4 @@
 [ ] handle 500 errors for /quote
 [ ] works well as a PWA
 [ ] make design look gud
+[ ] can sell entire balance including dust

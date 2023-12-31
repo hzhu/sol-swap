@@ -3,7 +3,7 @@ import { Form } from "@remix-run/react";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useReducer, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import {
   Button,
   ComboBox,
@@ -46,14 +46,22 @@ export default function Index() {
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
-  const balance = useBalance({ publicKey, connection });
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { sellToken, buyToken, sellAmount, buyAmount, transactionReceipt } =
+    state;
+  const { data: balance } = useBalance({
+    publicKey,
+    connection,
+    transactionReceipt,
+  });
+
   const { tokenBalance } = useTokenBalance({
     publicKey,
     connection,
-    token: state.sellToken,
+    token: sellToken,
+    transactionReceipt,
   });
-  const debouncedSellAmount: string = useDebounce(state.sellAmount, 500);
+  const debouncedSellAmount: string = useDebounce(sellAmount, 500);
   const { data: quote, isFetching: isFetchingQuote } = useQuote({
     state,
     dispatch,
@@ -67,17 +75,15 @@ export default function Index() {
   );
 
   const balanceUi =
-    state.sellToken.address === "So11111111111111111111111111111111111111112"
+    sellToken.address === "So11111111111111111111111111111111111111112"
       ? balance
       : tokenBalance;
 
   const insufficientBalance =
-    balanceUi === undefined && state.sellAmount !== ""
+    balanceUi === undefined && sellAmount !== ""
       ? true
-      : lamportsToTokenUnits(
-          Number(quote?.inAmount),
-          state.sellToken.decimals
-        ) >= balanceUi?.uiAmount;
+      : lamportsToTokenUnits(Number(quote?.inAmount), sellToken.decimals) >=
+        balanceUi?.uiAmount;
 
   return (
     <main
@@ -98,7 +104,7 @@ export default function Index() {
               <div className="flex w-full">
                 <img
                   alt="sol"
-                  src={state.sellToken.logoURI}
+                  src={sellToken.logoURI}
                   className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
                 />
                 <Input
@@ -112,7 +118,7 @@ export default function Index() {
                   autoComplete="off"
                   spellCheck="false"
                   inputMode="decimal"
-                  value={state.sellAmount}
+                  value={sellAmount}
                   pattern="^[0-9]*[.,]?[0-9]*$"
                   className="px-3 py-2 rounded-lg border w-full border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
                   onChange={(e) => {
@@ -145,11 +151,11 @@ export default function Index() {
                 setSellItems(filteredList.slice(0, 7));
               }}
               inputValue={state.sellSymbolInput}
-              selectedKey={state.sellToken.address}
+              selectedKey={sellToken.address}
               onSelectionChange={(id) => {
                 const selectedItem = sellItems.find((o) => o.address === id);
                 if (!selectedItem) return;
-                if (selectedItem.address === state.buyToken.address) {
+                if (selectedItem.address === buyToken.address) {
                   dispatch({ type: "reverse trade direction" });
                 } else {
                   dispatch({ type: "set sell token", payload: selectedItem });
@@ -206,7 +212,7 @@ export default function Index() {
                 <div className="flex items-center">
                   <img
                     alt="sol"
-                    src={state.buyToken.logoURI}
+                    src={buyToken.logoURI}
                     className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
                   />
                   <input
@@ -215,7 +221,7 @@ export default function Index() {
                     id="buy-input"
                     name="buy-input"
                     placeholder="0.0"
-                    value={state.buyAmount}
+                    value={buyAmount}
                     className="px-3 py-2 rounded-lg border cursor-not-allowed bg-gray-200 w-full"
                   />
                 </div>
@@ -235,11 +241,11 @@ export default function Index() {
                   setBuyItems(newItems.slice(0, 7));
                 }}
                 inputValue={state.buySymbolInput}
-                selectedKey={state.buyToken.address}
+                selectedKey={buyToken.address}
                 onSelectionChange={(id) => {
                   const selectedItem = buyItems.find((o) => o.address === id);
                   if (!selectedItem) return;
-                  if (selectedItem.address === state.sellToken.address) {
+                  if (selectedItem.address === sellToken.address) {
                     dispatch({ type: "reverse trade direction" });
                   } else {
                     selectedItem &&
@@ -283,8 +289,7 @@ export default function Index() {
           </div>
           {insufficientBalance && (
             <div className="text-center bg-red-200 my-2 border border-red-600 rounded-md py-2">
-              Insufficient balance: You don't have enough{" "}
-              {state.sellToken.symbol}.
+              Insufficient balance: You don't have enough {sellToken.symbol}.
             </div>
           )}
           <div className="px-4 sm:px-0 my-2">
@@ -369,7 +374,7 @@ export default function Index() {
         </Form>
       </section>
       <Modal
-        isOpen={Boolean(state.transactionReceipt)}
+        isOpen={Boolean(transactionReceipt)}
         className="max-w-xl px-2 sm:px-0"
       >
         <Dialog className="bg-white rounded-md p-8">

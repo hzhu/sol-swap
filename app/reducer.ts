@@ -147,7 +147,6 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
         buyAmount: "",
         sellAmount: "",
         isSwapping: false,
-        transactionReceipt: "",
         quoteResponse: undefined,
       };
     default:

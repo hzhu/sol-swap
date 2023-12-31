@@ -1,20 +1,23 @@
-import { useEffect, useState } from "react";
 import { PublicKey } from "@solana/web3.js";
+import { useQuery } from "@tanstack/react-query";
 import { lamportsToTokenUnits } from "~/utils";
-import { type Connection } from "@solana/web3.js";
-import type { Balance } from "~/types";
+import type { Connection } from "@solana/web3.js";
+
+const SOL_DECIMALS = 9;
 
 export function useBalance({
   publicKey,
   connection,
+  transactionReceipt,
 }: {
   publicKey: PublicKey | null;
   connection: Connection;
+  transactionReceipt: string;
 }) {
-  const [balance, setBalance] = useState<Balance>();
-
-  useEffect(() => {
-    async function run() {
+  return useQuery({
+    queryKey: [publicKey, `${transactionReceipt}-balance`],
+    enabled: Boolean(publicKey),
+    queryFn: async () => {
       if (publicKey) {
         const balance = await connection.getBalance(
           new PublicKey(publicKey.toString())
@@ -22,16 +25,13 @@ export function useBalance({
 
         const uiAmount = lamportsToTokenUnits(balance, 9);
 
-        setBalance({
+        return {
           uiAmount,
           uiAmountString: uiAmount.toString(),
           amount: balance.toString(),
-          decimals: 9,
-        });
+          decimals: SOL_DECIMALS,
+        };
       }
-    }
-    if (publicKey) run();
-  }, [connection, publicKey, setBalance]);
-
-  return balance;
+    },
+  });
 }
