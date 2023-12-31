@@ -20,6 +20,7 @@ export function useQuote({
       state.sellAmount,
       debouncedSellAmount,
     ],
+    refetchInterval: 30000,
     enabled:
       Boolean(Number(debouncedSellAmount)) &&
       Boolean(Number(state.sellAmount)) &&

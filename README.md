@@ -26,6 +26,7 @@
 [x] refactor and create useQuote + remove fetching state from reducer
 [x] refactor everything that can be moved to react-query
 [ ] max button populates the sell input
+[ ] introduce iOS-style modal sheet
 [ ] implement mobile combobox
 [ ] show "trending" suggestions as the initial suggestions
 [ ] dynamically fetch token list
@@ -42,3 +43,6 @@
 [ ] works well as a PWA
 [ ] make design look gud
 [ ] can sell entire balance including dust
+[ ] show price impact
+[ ] allow user to set slippage
+[ ] show route plan
