@@ -1,6 +1,5 @@
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
-import { useQuery } from "@tanstack/react-query";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { VersionedTransaction } from "@solana/web3.js";
@@ -19,13 +18,13 @@ import {
   Heading,
   Modal,
 } from "react-aria-components";
-import { useBalance, useDebounce } from "~/hooks";
 import { tokenList } from "~/tokenList";
 import { initialState, reducer } from "~/reducer";
 import { DirectionButton, Spinner } from "~/components";
+import { useQuote, useBalance, useDebounce } from "~/hooks";
 import { getProvider, lamportsToTokenUnits } from "~/utils";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
-import type { Token, PhantomWallet, QuoteResponse } from "~/types";
+import type { Token, PhantomWallet } from "~/types";
 import styles from "~/tailwind.css";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
@@ -47,6 +46,7 @@ export default function Index() {
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
+  const balance = useBalance({ publicKey, connection });
   const [state, dispatch] = useReducer(reducer, initialState);
   const debouncedSellAmount: string = useDebounce(state.sellAmount, 500);
   const [sellItems, setSellItems] = useState(
@@ -75,48 +75,11 @@ export default function Index() {
     run();
   }, [connection, publicKey]);
 
-  const { data, isFetching } = useQuery<QuoteResponse>({
-    queryKey: [
-      debouncedSellAmount,
-      state.sellAmount,
-      state.buyToken,
-      state.sellToken,
-    ],
-    enabled:
-      Boolean(Number(debouncedSellAmount)) &&
-      Boolean(Number(state.sellAmount)) &&
-      state.sellAmount === debouncedSellAmount,
-    queryFn: async () => {
-      const { decimals } = state.sellToken;
-      const amount = Math.round(
-        parseFloat(debouncedSellAmount) * Math.pow(10, decimals)
-      );
-      const searchParams = new URLSearchParams({
-        slippageBps: "25",
-        onlyDirectRoutes: "false",
-        asLegacyTransaction: "false",
-        inputMint: state.sellToken.address,
-        outputMint: state.buyToken.address,
-        amount: amount.toString(),
-      }).toString();
-      const response = await fetch(`/quote?${searchParams}`);
-      return response.json();
-    },
+  const { data, isFetching } = useQuote({
+    state,
+    dispatch,
+    debouncedSellAmount,
   });
-
-  const balance = useBalance({ publicKey, connection });
-
-  // https://tanstack.com/query/latest/docs/react/guides/migrating-to-react-query-4#onsuccess-is-no-longer-called-from-setquerydata
-  useEffect(() => {
-    if (isFetching) return;
-    const buyAmount = data
-      ? lamportsToTokenUnits(
-          Number(data.outAmount),
-          state.buyToken.decimals
-        ).toString()
-      : "";
-    dispatch({ type: "set buy amount", payload: buyAmount });
-  }, [data, state.buyToken, isFetching]);
 
   const sellBalanceSPL = useMemo(() => {
     if (state.tokenAccounts) {

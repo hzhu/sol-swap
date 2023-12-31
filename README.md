@@ -24,6 +24,7 @@
 [x] refactor and create useBalance
 [x] refactor and create useQuote + remove fetching state from reducer
 [ ] max button populates the sell input
+[ ] implement mobile combobox
 [ ] show "trending" suggestions as the initial suggestions
 [ ] dynamically fetch token list
 [ ] persist token list in index db
@@ -34,7 +35,7 @@
 [ ] async defer the token list
 [ ] store transactions in local storage or even better in a cookie string
 [ ] tab shows transaction history
-[ ] store transactions in pocketbase
+[ ] store transactions in pocketbase or indexDB
 [ ] support coinbase wallet
 [ ] handle 500 errors for /quote
 [ ] works well as a PWA
