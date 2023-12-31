@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, type Dispatch } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { lamportsToTokenUnits } from "~/utils";
 import type { QuoteResponse } from "~/types";
 import { type ActionTypes, type ReducerState } from "~/reducer";

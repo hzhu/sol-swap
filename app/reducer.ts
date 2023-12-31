@@ -1,4 +1,4 @@
-import type { Token, ParsedTokenAccountsByOwner } from "~/types";
+import type { Token } from "~/types";
 
 export interface ReducerState {
   sellToken: Token;
@@ -9,14 +9,9 @@ export interface ReducerState {
   buySymbolInput: string;
   isSwapping: boolean;
   transactionReceipt: string;
-  tokenAccounts: ParsedTokenAccountsByOwner | undefined;
 }
 
 export type ActionTypes =
-  | {
-      type: "set token accounts by owner";
-      payload: ParsedTokenAccountsByOwner | undefined;
-    }
   | {
       type: "set is swapping";
       payload: boolean;
@@ -102,11 +97,7 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
         buySymbolInput: state.sellToken.symbol,
         fetchingQuote: state.sellAmount !== "",
       };
-    case "set token accounts by owner":
-      return {
-        ...state,
-        tokenAccounts: action.payload,
-      };
+
     case "set sell amount":
       return {
         ...state,

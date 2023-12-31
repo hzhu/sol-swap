@@ -17,19 +17,20 @@
 [x] add spinner to swapping and fetching button
 [x] fix broken keyboard navigation styling on comboboxes
 [x] refactor selected sell token + selected symbol to reducer
+[x] handles insufficient balance to sell
 [x] general refactor to clean up reducer state
 [x] move reducer into its own file
 [x] clicking trade direction should only make a single fetch to /quote
 [x] disabled swap button when user types an amount for a token they do not own
 [x] refactor and create useBalance
 [x] refactor and create useQuote + remove fetching state from reducer
+[x] refactor everything that can be moved to react-query
 [ ] max button populates the sell input
 [ ] implement mobile combobox
 [ ] show "trending" suggestions as the initial suggestions
 [ ] dynamically fetch token list
 [ ] persist token list in index db
 [ ] handles unconnected state?
-[ ] handles insufficient balance to sell
 [ ] handles reverts?
 [ ] handless API errors from Jupiter
 [ ] async defer the token list
@@ -39,4 +40,4 @@
 [ ] support coinbase wallet
 [ ] handle 500 errors for /quote
 [ ] works well as a PWA
-[ ] round 1 design updates
+[ ] make design look gud

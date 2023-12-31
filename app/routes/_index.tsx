@@ -1,10 +1,9 @@
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { VersionedTransaction } from "@solana/web3.js";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useReducer, useState } from "react";
 import {
   Button,
   ComboBox,
@@ -19,12 +18,18 @@ import {
   Modal,
 } from "react-aria-components";
 import { tokenList } from "~/tokenList";
+import { lamportsToTokenUnits } from "~/utils";
 import { initialState, reducer } from "~/reducer";
 import { DirectionButton, Spinner } from "~/components";
-import { useQuote, useBalance, useDebounce } from "~/hooks";
-import { getProvider, lamportsToTokenUnits } from "~/utils";
+import {
+  useQuote,
+  useBalance,
+  useDebounce,
+  useProvider,
+  useTokenBalance,
+} from "~/hooks";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
-import type { Token, PhantomWallet } from "~/types";
+import type { Token } from "~/types";
 import styles from "~/tailwind.css";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
@@ -37,18 +42,23 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const providerRef = useRef<PhantomWallet>();
-
-  useEffect(() => {
-    providerRef.current = getProvider();
-  }, []);
-
+  const provider = useProvider();
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
   const balance = useBalance({ publicKey, connection });
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { tokenBalance } = useTokenBalance({
+    publicKey,
+    connection,
+    token: state.sellToken,
+  });
   const debouncedSellAmount: string = useDebounce(state.sellAmount, 500);
+  const { data: quote, isFetching: isFetchingQuote } = useQuote({
+    state,
+    dispatch,
+    debouncedSellAmount,
+  });
   const [sellItems, setSellItems] = useState(
     tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
   );
@@ -56,55 +66,16 @@ export default function Index() {
     tokenList.filter((item) => item.symbol.toLowerCase().includes("usdc"))
   );
 
-  useEffect(() => {
-    if (!publicKey) return;
-
-    async function run() {
-      if (!publicKey) return;
-      const tokenAccounts = await connection.getParsedTokenAccountsByOwner(
-        publicKey,
-        { programId: TOKEN_PROGRAM_ID }
-      );
-
-      dispatch({
-        type: "set token accounts by owner",
-        payload: tokenAccounts,
-      });
-    }
-
-    run();
-  }, [connection, publicKey]);
-
-  const { data, isFetching } = useQuote({
-    state,
-    dispatch,
-    debouncedSellAmount,
-  });
-
-  const sellBalanceSPL = useMemo(() => {
-    if (state.tokenAccounts) {
-      const [balance] = state.tokenAccounts.value.filter((v) => {
-        return v.account.data.parsed.info.mint === state.sellToken.address;
-      });
-
-      if (balance) {
-        return balance.account.data.parsed.info.tokenAmount;
-      }
-    }
-
-    return undefined;
-  }, [state.tokenAccounts, state.sellToken]);
-
   const balanceUi =
     state.sellToken.address === "So11111111111111111111111111111111111111112"
       ? balance
-      : sellBalanceSPL;
+      : tokenBalance;
 
   const insufficientBalance =
     balanceUi === undefined && state.sellAmount !== ""
       ? true
       : lamportsToTokenUnits(
-          Number(data?.inAmount),
+          Number(quote?.inAmount),
           state.sellToken.decimals
         ) >= balanceUi?.uiAmount;
 
@@ -217,7 +188,7 @@ export default function Index() {
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton
-              disabled={state.isSwapping || isFetching}
+              disabled={state.isSwapping || isFetchingQuote}
               onClick={() => {
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
@@ -321,15 +292,18 @@ export default function Index() {
               <button
                 type="button"
                 className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full disabled:cursor-not-allowed ${
-                  !data || state.isSwapping || !publicKey
+                  !quote || state.isSwapping || !publicKey
                     ? "cursor-not-allowed"
                     : "cursor-pointer"
                 }`}
                 disabled={
-                  state.isSwapping || isFetching || !data || insufficientBalance
+                  state.isSwapping ||
+                  isFetchingQuote ||
+                  !quote ||
+                  insufficientBalance
                 }
                 onClick={async () => {
-                  if (!data) return;
+                  if (!quote) return;
 
                   try {
                     dispatch({ type: "set is swapping", payload: true });
@@ -338,7 +312,7 @@ export default function Index() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          quoteResponse: data,
+                          quoteResponse: quote,
                           userPublicKey: publicKey,
                           wrapAndUnwrapSol: true,
                         }),
@@ -353,10 +327,9 @@ export default function Index() {
                     const versionedTx =
                       VersionedTransaction.deserialize(swapTransactionBuf);
 
-                    const receipt =
-                      await providerRef.current?.signAndSendTransaction(
-                        versionedTx
-                      );
+                    const receipt = await provider?.signAndSendTransaction(
+                      versionedTx
+                    );
                     receipt &&
                       dispatch({
                         type: "set transaction receipt",
@@ -370,7 +343,7 @@ export default function Index() {
                   }
                 }}
               >
-                {isFetching ? (
+                {isFetchingQuote ? (
                   <div className="flex justify-center">
                     <Spinner size={1.75} />
                     <div className="ml-2">Getting best price…</div>

@@ -1,0 +1,41 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import type { Connection, PublicKey } from "@solana/web3.js";
+import type { Token } from "~/types";
+
+export function useTokenBalance({
+  token,
+  connection,
+  publicKey,
+}: {
+  token: Token;
+  connection: Connection;
+  publicKey: PublicKey | null;
+}) {
+  const { data: tokenAccounts } = useQuery({
+    queryKey: [publicKey],
+    queryFn: async () => {
+      if (!publicKey) return Promise.resolve(null);
+      return connection.getParsedTokenAccountsByOwner(publicKey, {
+        programId: TOKEN_PROGRAM_ID,
+      });
+    },
+  });
+
+  const tokenBalance = useMemo(() => {
+    if (tokenAccounts) {
+      const [balance] = tokenAccounts.value.filter((v) => {
+        return v.account.data.parsed.info.mint === token.address;
+      });
+
+      if (balance) {
+        return balance.account.data.parsed.info.tokenAmount;
+      }
+    }
+
+    return undefined;
+  }, [tokenAccounts, token]);
+
+  return { tokenBalance };
+}
