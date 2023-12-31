@@ -1,9 +1,9 @@
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
+import { useReducer, useState } from "react";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { useMemo, useReducer, useState } from "react";
 import {
   Button,
   ComboBox,
@@ -30,9 +30,15 @@ import {
 } from "~/hooks";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import type { Token } from "~/types";
-import styles from "~/tailwind.css";
+import tailwindStyles from "~/styles/tailwind.css";
+import reactAriaStyles from "~/styles/react-aria.css";
+import solanaWalletStyles from "~/styles/solana-wallet.css";
 
-export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: tailwindStyles },
+  { rel: "stylesheet", href: reactAriaStyles },
+  { rel: "stylesheet", href: solanaWalletStyles },
+];
 
 export const meta: MetaFunction = () => {
   return [

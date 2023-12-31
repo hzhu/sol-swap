@@ -16,7 +16,6 @@ import {
 import { UnsafeBurnerWalletAdapter } from "@solana/wallet-adapter-wallets";
 import {
   WalletModalProvider,
-  WalletDisconnectButton,
   WalletMultiButton,
 } from "@solana/wallet-adapter-react-ui";
 import type { LinksFunction, MetaFunction } from "@remix-run/node";
@@ -94,9 +93,7 @@ export default function App() {
               <WalletModalProvider>
                 {isMounted && (
                   <div className="flex justify-end mt-1 mr-1">
-                    <WalletMultiButton />
-                    &nbsp;&nbsp;
-                    <WalletDisconnectButton />
+                    <WalletMultiButton>Connect</WalletMultiButton>
                   </div>
                 )}
                 <QueryClientProvider client={queryClient}>

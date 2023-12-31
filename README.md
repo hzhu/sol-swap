@@ -25,6 +25,7 @@
 [x] refactor and create useBalance
 [x] refactor and create useQuote + remove fetching state from reducer
 [x] refactor everything that can be moved to react-query
+[ ] only show insufficient balance message is wallet is connected
 [ ] max button populates the sell input
 [ ] introduce iOS-style modal sheet
 [ ] implement mobile combobox
