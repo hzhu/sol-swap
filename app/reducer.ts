@@ -1,5 +1,4 @@
-import { lamportsToTokenUnits } from "./utils";
-import type { Token, QuoteResponse, ParsedTokenAccountsByOwner } from "~/types";
+import type { Token, ParsedTokenAccountsByOwner } from "~/types";
 
 export interface ReducerState {
   sellToken: Token;
@@ -9,24 +8,14 @@ export interface ReducerState {
   sellSymbolInput: string;
   buySymbolInput: string;
   isSwapping: boolean;
-  fetchingQuote: boolean;
   transactionReceipt: string;
-  quoteResponse: QuoteResponse | undefined;
   tokenAccounts: ParsedTokenAccountsByOwner | undefined;
 }
 
 export type ActionTypes =
   | {
-      type: "set quote response";
-      payload: QuoteResponse | undefined;
-    }
-  | {
       type: "set token accounts by owner";
       payload: ParsedTokenAccountsByOwner | undefined;
-    }
-  | {
-      type: "fetching quote";
-      payload: boolean;
     }
   | {
       type: "set is swapping";
@@ -113,27 +102,10 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
         buySymbolInput: state.sellToken.symbol,
         fetchingQuote: state.sellAmount !== "",
       };
-    case "set quote response":
-      const buyAmount = action.payload
-        ? lamportsToTokenUnits(
-            Number(action.payload.outAmount),
-            state.buyToken.decimals
-          ).toString()
-        : state.buyAmount;
-      return {
-        ...state,
-        buyAmount,
-        quoteResponse: action.payload,
-      };
     case "set token accounts by owner":
       return {
         ...state,
         tokenAccounts: action.payload,
-      };
-    case "fetching quote":
-      return {
-        ...state,
-        fetchingQuote: action.payload,
       };
     case "set sell amount":
       return {

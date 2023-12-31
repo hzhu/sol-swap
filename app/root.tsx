@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction, MetaFunction } from "@remix-run/node";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Links,
   LiveReload,
@@ -8,7 +9,6 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import React, { FC, useEffect, useMemo, useState } from "react";
 import {
   ConnectionProvider,
   WalletProvider,
@@ -19,6 +19,7 @@ import {
   WalletDisconnectButton,
   WalletMultiButton,
 } from "@solana/wallet-adapter-react-ui";
+import type { LinksFunction, MetaFunction } from "@remix-run/node";
 
 export const meta: MetaFunction = () => {
   return [
@@ -75,6 +76,7 @@ export default function App() {
   });
 
   const [isMounted, setIsMounted] = useState(false);
+  const queryClient = new QueryClient();
   useEffect(() => setIsMounted(true), []);
 
   return (
@@ -97,7 +99,9 @@ export default function App() {
                     <WalletDisconnectButton />
                   </div>
                 )}
-                <Outlet />
+                <QueryClientProvider client={queryClient}>
+                  <Outlet />
+                </QueryClientProvider>
               </WalletModalProvider>
             </WalletProvider>
           </ConnectionProvider>

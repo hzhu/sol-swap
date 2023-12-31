@@ -1,5 +1,6 @@
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
+import { useQuery } from "@tanstack/react-query";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { VersionedTransaction } from "@solana/web3.js";
@@ -23,8 +24,8 @@ import { tokenList } from "~/tokenList";
 import { initialState, reducer } from "~/reducer";
 import { DirectionButton, Spinner } from "~/components";
 import { getProvider, lamportsToTokenUnits } from "~/utils";
-import type { Token, PhantomWallet } from "~/types";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
+import type { Token, PhantomWallet, QuoteResponse } from "~/types";
 import styles from "~/tailwind.css";
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
@@ -74,41 +75,48 @@ export default function Index() {
     run();
   }, [connection, publicKey]);
 
-  useEffect(() => {
-    if (!debouncedSellAmount) return;
-    if (Number(debouncedSellAmount) === 0) return;
-    if (!state.buyToken || !state.sellToken) return;
-    if (debouncedSellAmount.toString() === "") return;
-    if (state.sellAmount !== debouncedSellAmount) return;
-
-    const amountInSmallestUnit =
-      Number(debouncedSellAmount) * Math.pow(10, state.sellToken.decimals);
-
-    if (amountInSmallestUnit.toString().includes(".")) return;
-
-    const searchParams = new URLSearchParams({
-      slippageBps: "25",
-      onlyDirectRoutes: "false",
-      asLegacyTransaction: "false",
-      inputMint: state.sellToken.address,
-      outputMint: state.buyToken.address,
-      amount: amountInSmallestUnit.toString(),
-    }).toString();
-
-    const url = `/quote?${searchParams}`;
-
-    async function fetchQuote() {
-      dispatch({ type: "fetching quote", payload: true });
-      const response = await fetch(url);
-      const data = await response.json();
-      dispatch({ type: "set quote response", payload: data });
-      dispatch({ type: "fetching quote", payload: false });
-    }
-
-    fetchQuote();
-  }, [debouncedSellAmount, state.sellAmount, state.buyToken, state.sellToken]);
+  const { data, isFetching } = useQuery<QuoteResponse>({
+    queryKey: [
+      debouncedSellAmount,
+      state.sellAmount,
+      state.buyToken,
+      state.sellToken,
+    ],
+    enabled:
+      Boolean(Number(debouncedSellAmount)) &&
+      Boolean(Number(state.sellAmount)) &&
+      state.sellAmount === debouncedSellAmount,
+    queryFn: async () => {
+      const { decimals } = state.sellToken;
+      const amount = Math.round(
+        parseFloat(debouncedSellAmount) * Math.pow(10, decimals)
+      );
+      const searchParams = new URLSearchParams({
+        slippageBps: "25",
+        onlyDirectRoutes: "false",
+        asLegacyTransaction: "false",
+        inputMint: state.sellToken.address,
+        outputMint: state.buyToken.address,
+        amount: amount.toString(),
+      }).toString();
+      const response = await fetch(`/quote?${searchParams}`);
+      return response.json();
+    },
+  });
 
   const balance = useBalance({ publicKey, connection });
+
+  // https://tanstack.com/query/latest/docs/react/guides/migrating-to-react-query-4#onsuccess-is-no-longer-called-from-setquerydata
+  useEffect(() => {
+    if (isFetching) return;
+    const buyAmount = data
+      ? lamportsToTokenUnits(
+          Number(data.outAmount),
+          state.buyToken.decimals
+        ).toString()
+      : "";
+    dispatch({ type: "set buy amount", payload: buyAmount });
+  }, [data, state.buyToken, isFetching]);
 
   const sellBalanceSPL = useMemo(() => {
     if (state.tokenAccounts) {
@@ -133,7 +141,7 @@ export default function Index() {
     balanceUi === undefined && state.sellAmount !== ""
       ? true
       : lamportsToTokenUnits(
-          Number(state.quoteResponse?.inAmount),
+          Number(data?.inAmount),
           state.sellToken.decimals
         ) >= balanceUi?.uiAmount;
 
@@ -182,10 +190,6 @@ export default function Index() {
                     }
                     if (e.target.value === "") {
                       dispatch({ type: "set buy amount", payload: "" });
-                      dispatch({
-                        type: "set quote response",
-                        payload: undefined,
-                      });
                     }
                   }}
                 />
@@ -250,7 +254,7 @@ export default function Index() {
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton
-              disabled={state.isSwapping || state.fetchingQuote}
+              disabled={state.isSwapping || isFetching}
               onClick={() => {
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
@@ -354,18 +358,15 @@ export default function Index() {
               <button
                 type="button"
                 className={`border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full disabled:cursor-not-allowed ${
-                  !state.quoteResponse || state.isSwapping || !publicKey
+                  !data || state.isSwapping || !publicKey
                     ? "cursor-not-allowed"
                     : "cursor-pointer"
                 }`}
                 disabled={
-                  state.isSwapping ||
-                  state.fetchingQuote ||
-                  !state.quoteResponse ||
-                  insufficientBalance
+                  state.isSwapping || isFetching || !data || insufficientBalance
                 }
                 onClick={async () => {
-                  if (!state.quoteResponse) return;
+                  if (!data) return;
 
                   try {
                     dispatch({ type: "set is swapping", payload: true });
@@ -374,7 +375,7 @@ export default function Index() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          quoteResponse: state.quoteResponse,
+                          quoteResponse: data,
                           userPublicKey: publicKey,
                           wrapAndUnwrapSol: true,
                         }),
@@ -406,7 +407,7 @@ export default function Index() {
                   }
                 }}
               >
-                {state.fetchingQuote ? (
+                {isFetching ? (
                   <div className="flex justify-center">
                     <Spinner size={1.75} />
                     <div className="ml-2">Getting best price…</div>

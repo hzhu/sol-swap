@@ -22,7 +22,7 @@
 [x] clicking trade direction should only make a single fetch to /quote
 [x] disabled swap button when user types an amount for a token they do not own
 [x] refactor and create useBalance
-[ ] refactor and create useQuote + remove fetching state from reducer
+[x] refactor and create useQuote + remove fetching state from reducer
 [ ] max button populates the sell input
 [ ] show "trending" suggestions as the initial suggestions
 [ ] dynamically fetch token list
