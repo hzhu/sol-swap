@@ -20,10 +20,11 @@ import {
 import { tokenList } from "~/tokenList";
 import { lamportsToTokenUnits } from "~/utils";
 import { initialState, reducer } from "~/reducer";
-import { DirectionButton, Spinner } from "~/components";
+import { Spinner, BottomSheetTokenSearch, DirectionButton } from "~/components";
 import {
   useQuote,
   useBalance,
+  useFeature,
   useDebounce,
   useProvider,
   useTokenBalance,
@@ -52,6 +53,7 @@ export default function Index() {
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
+  const hasBottomSheet = useFeature("bottom-sheet");
   const [state, dispatch] = useReducer(reducer, initialState);
   const { sellToken, buyToken, sellAmount, buyAmount, transactionReceipt } =
     state;
@@ -97,6 +99,7 @@ export default function Index() {
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
     >
       <section>
+        {hasBottomSheet && <BottomSheetTokenSearch />}
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Form>
           <div className="sm:flex sm:justify-between bg-purple-300 sm:rounded-tl-lg sm:rounded-tr-lg p-4 pb-8 sm:pb-4">

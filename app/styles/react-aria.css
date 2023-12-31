@@ -1,3 +1,7 @@
+body {
+  --page-background: rgb(243, 232, 255);
+}
+
 .react-aria-Menu {
   --highlight-background: #514d86;
   --highlight-foreground: white;
