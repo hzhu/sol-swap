@@ -28,8 +28,9 @@
 [x] introduce iOS-style modal sheet
 [x] implement mobile combobox
 [x] swipe down at the beginning of list should not dismiss sheet
+[x] sell token search button should open bottom sheet
 [-] restructure mobile designs: create modal + sheet trigger
-[ ] sell token search button should open bottom sheet
+[ ] selecting the same opposite token should flip the trade direction
 [ ] add 🔍 and chevron svg icon
 [ ] token search trigger should have all button states
 [ ] broken image should have a fallback

@@ -21,7 +21,7 @@ import {
   useMotionTemplate,
   useMotionValueEvent,
 } from "framer-motion";
-
+import memoize from "memoize-one";
 import {
   Modal,
   Button,
@@ -46,13 +46,20 @@ const Row = memo(
   }: {
     index: number;
     style: React.CSSProperties;
-    data: Token[];
+    data: {
+      onClick: (token: Token) => void;
+      suggestions: Token[];
+    };
   }) => {
-    const item = data[index];
+    const { onClick, suggestions } = data;
+    const item = suggestions[index];
 
     return (
       <div style={style}>
-        <button className="w-full text-left px-4 py-4 flex items-center">
+        <button
+          onClick={() => onClick(item)}
+          className="w-full text-left px-4 py-4 flex items-center"
+        >
           <img
             alt={item.symbol}
             src={item.logoURI}
@@ -93,7 +100,15 @@ const staticTransition = {
 const SHEET_MARGIN = 34;
 const SHEET_RADIUS = 12;
 
-export function BottomSheetTokenSearch(props: { children: ReactNode }) {
+const createItemData = memoize((suggestions, onClick) => ({
+  suggestions,
+  onClick,
+}));
+
+export function BottomSheetTokenSearch(props: {
+  children: ReactNode;
+  onSelect: (token: Token) => void;
+}) {
   const [suggestions, setSuggestions] = useState(tokenList);
 
   const rootRef = useRef<HTMLElement>();
@@ -147,6 +162,11 @@ export function BottomSheetTokenSearch(props: { children: ReactNode }) {
 
   const heightz = typeof window !== "undefined" ? window.innerHeight : 844;
   const widthz = typeof window !== "undefined" ? window.innerWidth : 390;
+
+  const itemData = createItemData(suggestions, (token: Token) => {
+    props.onSelect(token);
+    setOpen(false);
+  });
 
   return (
     <BottomSheetContext.Provider value={setOpen}>
@@ -214,19 +234,14 @@ export function BottomSheetTokenSearch(props: { children: ReactNode }) {
                     </Button>
                   </div>
                 </div>
-                <div
-                  onScroll={() => {
-                    console.log("scroll");
-                  }}
-                >
+                <div>
                   <List
-                    className=""
-                    itemCount={suggestions.length}
                     itemSize={70}
                     width={widthz}
                     height={heightz - 125} // 125px is the height of the search bar & is used as offset
-                    itemData={suggestions}
+                    itemData={itemData}
                     overscanCount={10}
+                    itemCount={suggestions.length}
                   >
                     {Row}
                   </List>

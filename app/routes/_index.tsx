@@ -142,7 +142,13 @@ export default function Index() {
               {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
             </Text> */}
             <div className="flex items-center ml-3">
-              <BottomSheetTokenSearch>
+              <BottomSheetTokenSearch
+                onSelect={(token: Token) => {
+                  if (token.address === sellToken.address) return;
+                  // TODO: swap tokens if the same
+                  dispatch({ type: "set sell token", payload: token });
+                }}
+              >
                 <BottomSheetTrigger className="flex items-center bg-purple-800 text-white rounded-full p-1">
                   <img
                     alt="sol"
