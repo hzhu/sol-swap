@@ -89,7 +89,7 @@ export function BottomSheetTokenSearch() {
 
   const windowHeight = windowRef.current?.innerHeight || 844; // 844 is the default height of the iPhone 12 Pro
   const windowWidth = windowRef.current?.innerWidth || 390; // 390 is the default width of the iPhone 12 Pro
-  const [isOpen, setOpen] = useState(true);
+  const [isOpen, setOpen] = useState(false);
   const h = windowHeight - SHEET_MARGIN;
   const y = useMotionValue(h);
   const bgOpacity = useTransform(y, [0, h], [0.4, 0]);

@@ -99,107 +99,71 @@ export default function Index() {
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
     >
       <section>
-        {hasBottomSheet && <BottomSheetTokenSearch />}
+        <BottomSheetTokenSearch />
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Form>
-          <div className="sm:flex sm:justify-between bg-purple-300 sm:rounded-tl-lg sm:rounded-tr-lg p-4 pb-8 sm:pb-4">
-            <div>
-              <label
-                htmlFor="sell-input"
-                className="text-base cursor-pointer font-semibold"
-              >
-                You sell
-              </label>
-              <div className="flex w-full">
+          <div className="bg-slate-300 flex justify-between border rounded-2xl px-3">
+            <label
+              htmlFor="sell-input"
+              className="text-base cursor-pointer font-semibold pt-[21px] w-1/2"
+              style={{ height: "130px" }}
+            >
+              <div>You sell</div>
+              <Input
+                autoFocus
+                name="sol"
+                type="text"
+                minLength={1}
+                maxLength={50}
+                id="sell-input"
+                placeholder="0.0"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck="false"
+                inputMode="decimal"
+                value={sellAmount}
+                pattern="^[0-9]*[.,]?[0-9]*$"
+                className="px-3 py-2 rounded-lg border-0 w-48 outline-none bg-transparent text-3xl"
+                onChange={(e) => {
+                  if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
+                    dispatch({
+                      type: "set sell amount",
+                      payload: e.target.value.trim(),
+                    });
+                  }
+                  if (e.target.value === "") {
+                    dispatch({ type: "set buy amount", payload: "" });
+                  }
+                }}
+              />
+            </label>
+            {/* <Text className="text-xs block mt-2 text-end h-4">
+              {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
+            </Text> */}
+            <div className="flex items-center ml-3">
+              <button className="flex items-center bg-purple-800 text-white rounded-full p-1">
                 <img
                   alt="sol"
                   src={sellToken.logoURI}
-                  className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
+                  className="w-8 h-8 m-0 p-0 rounded-full"
                 />
-                <Input
-                  name="sol"
-                  type="text"
-                  minLength={1}
-                  maxLength={50}
-                  id="sell-input"
-                  placeholder="0.0"
-                  autoCorrect="off"
-                  autoComplete="off"
-                  spellCheck="false"
-                  inputMode="decimal"
-                  value={sellAmount}
-                  pattern="^[0-9]*[.,]?[0-9]*$"
-                  className="px-3 py-2 rounded-lg border w-full border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
-                  onChange={(e) => {
-                    if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
-                      dispatch({
-                        type: "set sell amount",
-                        payload: e.target.value.trim(),
-                      });
-                    }
-                    if (e.target.value === "") {
-                      dispatch({ type: "set buy amount", payload: "" });
-                    }
-                  }}
-                />
-              </div>
-              <Text className="text-xs block mt-2 text-end h-4">
-                {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
-              </Text>
+                <span className="mx-2">{sellToken.symbol}</span>
+                <svg
+                  className="mr-2"
+                  aria-hidden="true"
+                  focusable="false"
+                  role="img"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 512 512"
+                  width="12"
+                >
+                  <path
+                    fill="currentColor"
+                    d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
+                  ></path>
+                </svg>
+              </button>
             </div>
-            <ComboBox
-              menuTrigger="focus"
-              items={sellItems}
-              onInputChange={(value: string) => {
-                dispatch({ type: "set sell symbol input", payload: value });
-                const filteredList = tokenList.filter((token) => {
-                  return token.symbol
-                    .toLowerCase()
-                    .includes(value.toLowerCase());
-                });
-                setSellItems(filteredList.slice(0, 7));
-              }}
-              inputValue={state.sellSymbolInput}
-              selectedKey={sellToken.address}
-              onSelectionChange={(id) => {
-                const selectedItem = sellItems.find((o) => o.address === id);
-                if (!selectedItem) return;
-                if (selectedItem.address === buyToken.address) {
-                  dispatch({ type: "reverse trade direction" });
-                } else {
-                  dispatch({ type: "set sell token", payload: selectedItem });
-                }
-              }}
-            >
-              <Label className="text-xs cursor-pointer">
-                Search for any token
-              </Label>
-              <div>
-                <Input className="px-3 py-2 rounded-lg border w-full border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900" />
-                <Button>🔍</Button>
-              </div>
-              <Popover>
-                <ListBox>
-                  {(item: Token) => (
-                    <ListBoxItem
-                      id={item.address}
-                      key={item.address}
-                      textValue={item.symbol}
-                      className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[focused]:bg-purple-900 data-[focused]:dark:bg-purple-800 data-[focused]:text-white data-[disabled]:bg-gray-100"
-                    >
-                      <img
-                        alt={item.symbol}
-                        src={item.logoURI}
-                        className="rounded-full"
-                        style={{ width: "1.5rem", height: "1.5rem" }}
-                      />
-                      &nbsp;
-                      <span>{item.symbol}</span>
-                    </ListBoxItem>
-                  )}
-                </ListBox>
-              </Popover>
-            </ComboBox>
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton

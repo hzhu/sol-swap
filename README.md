@@ -28,6 +28,10 @@
 [x] introduce iOS-style modal sheet
 [x] implement mobile combobox
 [x] swipe down at the beginning of list should not dismiss sheet
+[-] restructure mobile designs: create modal + sheet trigger
+[ ] sell token search button should open bottom sheet
+[ ] add 🔍 and chevron svg icon
+[ ] token search trigger should have all button states
 [ ] broken image should have a fallback
 [ ] only show insufficient balance message is wallet is connected
 [ ] max button populates the sell input
