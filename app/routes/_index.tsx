@@ -12,6 +12,7 @@ import {
   ListBox,
   ListBoxItem,
   Popover,
+  Text,
   Dialog,
   Heading,
   Modal,
@@ -141,7 +142,7 @@ export default function Index() {
             {/* <Text className="text-xs block mt-2 text-end h-4">
               {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
             </Text> */}
-            <div className="flex items-center ml-3">
+            <div className="flex items-end ml-3 flex-col justify-center">
               <BottomSheetTokenSearch
                 onSelect={(token: Token) => {
                   if (token.address === sellToken.address) return;
@@ -176,6 +177,9 @@ export default function Index() {
                   </svg>
                 </BottomSheetTrigger>
               </BottomSheetTokenSearch>
+              <Text className="text-xs block mt-2 text-end h-4">
+                {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
+              </Text>
             </div>
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
