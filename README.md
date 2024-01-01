@@ -38,9 +38,9 @@
 [ ] broken image should have a fallback
 [x] only show insufficient balance message is wallet is connected
 [ ] max button populates the sell input
-[ ] tokelist: dynamically fetch token list
-[ ] tokelist: async defer the token list
-[ ] tokelist: persist token list in index db
+[ ] tokenlist: dynamically fetch token list
+[ ] tokenlist: async defer the token list
+[ ] tokenlist: persist token list in index db
 [ ] handles unconnected state?
 [ ] handles reverts?
 [ ] handless API errors from Jupiter
@@ -57,3 +57,4 @@
 [ ] show route plan
 [ ] dark mode
 [ ] i18n
+[ ] close button for bottom sheet should have some affordance (button states)

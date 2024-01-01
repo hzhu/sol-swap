@@ -96,7 +96,7 @@ export default function Index() {
       className="sm:max-w-lg mx-auto text-lg mt-10 sm:mt-40"
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
     >
-      <section>
+      <section className="px-2">
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Form>
           <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
@@ -169,7 +169,7 @@ export default function Index() {
                 </BottomSheetTrigger>
               </BottomSheetTokenSearch>
               {connected ? (
-                <Text className="text-xs block mt-2 mr-1 text-end h-4">
+                <Text className="text-xs block mt-2 mr-1 text-end h-4 text-nowrap">
                   {balance && balanceUi
                     ? `Balance: ${balanceUi.uiAmountString}`
                     : `Balance: 0`}
@@ -245,7 +245,7 @@ export default function Index() {
               Insufficient balance: You don't have enough {sellToken.symbol}.
             </div>
           )}
-          <div className="px-4 sm:px-0 my-1">
+          <div className="my-1">
             {connected ? (
               <button
                 type="button"
