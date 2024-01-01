@@ -1,4 +1,16 @@
-import { memo, useRef, useState, useEffect } from "react";
+import {
+  memo,
+  useRef,
+  useState,
+  useEffect,
+  forwardRef,
+  useContext,
+  createContext,
+  type ReactNode,
+  type ButtonHTMLAttributes,
+  type SetStateAction,
+  type Dispatch,
+} from "react";
 import { FixedSizeList as List, areEqual } from "react-window";
 import {
   motion,
@@ -21,6 +33,10 @@ import {
 } from "react-aria-components";
 import { tokenList } from "~/tokenList";
 import type { Token } from "~/types";
+
+const BottomSheetContext = createContext<Dispatch<
+  SetStateAction<boolean>
+> | null>(null);
 
 const Row = memo(
   ({
@@ -77,7 +93,7 @@ const staticTransition = {
 const SHEET_MARGIN = 34;
 const SHEET_RADIUS = 12;
 
-export function BottomSheetTokenSearch() {
+export function BottomSheetTokenSearch(props: { children: ReactNode }) {
   const [suggestions, setSuggestions] = useState(tokenList);
 
   const rootRef = useRef<HTMLElement>();
@@ -129,29 +145,12 @@ export function BottomSheetTokenSearch() {
 
   const motionModalRef = useRef<HTMLElement | SVGElement | null>(null);
 
-  const [dimensions, setDimensions] = useState<{
-    width: number;
-    height: number;
-  }>({
-    width: 390,
-    height: 844,
-  });
-
-  useEffect(() => {
-    const width = window.innerWidth || 390;
-    const height = motionModalRef.current?.clientHeight || 844;
-
-    setDimensions({ width, height });
-  }, []);
+  const heightz = typeof window !== "undefined" ? window.innerHeight : 844;
+  const widthz = typeof window !== "undefined" ? window.innerWidth : 390;
 
   return (
-    <>
-      <Button
-        onPress={() => setOpen(true)}
-        className="text-blue-600 text-lg font-semibold outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
-      >
-        Open sheet
-      </Button>
+    <BottomSheetContext.Provider value={setOpen}>
+      {props.children}
       <AnimatePresence>
         {isOpen && (
           <MotionModalOverlay
@@ -222,10 +221,10 @@ export function BottomSheetTokenSearch() {
                 >
                   <List
                     className=""
-                    height={dimensions.height + 20}
                     itemCount={suggestions.length}
                     itemSize={70}
-                    width={dimensions.width}
+                    width={widthz}
+                    height={heightz - 125} // 125px is the height of the search bar & is used as offset
                     itemData={suggestions}
                     overscanCount={10}
                   >
@@ -237,6 +236,35 @@ export function BottomSheetTokenSearch() {
           </MotionModalOverlay>
         )}
       </AnimatePresence>
-    </>
+    </BottomSheetContext.Provider>
   );
 }
+
+interface BottomSheetTriggerProps
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
+}
+
+// needa compose the onClick too :\
+// must be used within BottomSheetTokenSearch
+export const BottomSheetTrigger = forwardRef<
+  HTMLButtonElement,
+  BottomSheetTriggerProps
+>(({ children, onClick, ...props }, ref) => {
+  const setOpen = useContext(BottomSheetContext);
+
+  return (
+    <button
+      {...props}
+      ref={ref}
+      onClick={(e) => {
+        onClick && onClick(e);
+        setOpen && setOpen((isOpen) => !isOpen);
+      }}
+    >
+      {children}
+    </button>
+  );
+});
+
+BottomSheetTrigger.displayName = "BottomSheetTrigger";

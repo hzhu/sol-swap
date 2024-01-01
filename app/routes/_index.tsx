@@ -12,7 +12,6 @@ import {
   ListBox,
   ListBoxItem,
   Popover,
-  Text,
   Dialog,
   Heading,
   Modal,
@@ -20,11 +19,15 @@ import {
 import { tokenList } from "~/tokenList";
 import { lamportsToTokenUnits } from "~/utils";
 import { initialState, reducer } from "~/reducer";
-import { Spinner, BottomSheetTokenSearch, DirectionButton } from "~/components";
+import {
+  Spinner,
+  BottomSheetTokenSearch,
+  BottomSheetTrigger,
+  DirectionButton,
+} from "~/components";
 import {
   useQuote,
   useBalance,
-  useFeature,
   useDebounce,
   useProvider,
   useTokenBalance,
@@ -53,7 +56,6 @@ export default function Index() {
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const { publicKey, connected } = useWallet();
-  const hasBottomSheet = useFeature("bottom-sheet");
   const [state, dispatch] = useReducer(reducer, initialState);
   const { sellToken, buyToken, sellAmount, buyAmount, transactionReceipt } =
     state;
@@ -99,7 +101,6 @@ export default function Index() {
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
     >
       <section>
-        <BottomSheetTokenSearch />
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Form>
           <div className="bg-slate-300 flex justify-between border rounded-2xl px-3">
@@ -141,28 +142,30 @@ export default function Index() {
               {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
             </Text> */}
             <div className="flex items-center ml-3">
-              <button className="flex items-center bg-purple-800 text-white rounded-full p-1">
-                <img
-                  alt="sol"
-                  src={sellToken.logoURI}
-                  className="w-8 h-8 m-0 p-0 rounded-full"
-                />
-                <span className="mx-2">{sellToken.symbol}</span>
-                <svg
-                  className="mr-2"
-                  aria-hidden="true"
-                  focusable="false"
-                  role="img"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 512 512"
-                  width="12"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
-                  ></path>
-                </svg>
-              </button>
+              <BottomSheetTokenSearch>
+                <BottomSheetTrigger className="flex items-center bg-purple-800 text-white rounded-full p-1">
+                  <img
+                    alt="sol"
+                    src={sellToken.logoURI}
+                    className="w-8 h-8 m-0 p-0 rounded-full"
+                  />
+                  <span className="mx-2">{sellToken.symbol}</span>
+                  <svg
+                    className="mr-2"
+                    aria-hidden="true"
+                    focusable="false"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                    width="12"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
+                    ></path>
+                  </svg>
+                </BottomSheetTrigger>
+              </BottomSheetTokenSearch>
             </div>
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
