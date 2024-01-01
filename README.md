@@ -26,6 +26,7 @@
 [x] refactor and create useQuote + remove fetching state from reducer
 [x] refactor everything that can be moved to react-query
 [x] introduce iOS-style modal sheet
+[x] swipe down at the beginning of list should not dismiss sheet
 [ ] only show insufficient balance message is wallet is connected
 [ ] max button populates the sell input
 [ ] implement mobile combobox

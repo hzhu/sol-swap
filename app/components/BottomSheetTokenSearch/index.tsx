@@ -61,9 +61,9 @@ const SHEET_MARGIN = 34;
 const SHEET_RADIUS = 12;
 
 export function BottomSheetTokenSearch() {
-  const [sellItems, setSellItems] = useState(
-    tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
-  );
+  // const [sellItems, setSellItems] = useState(
+  //   tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
+  // );
 
   const rootRef = useRef<HTMLElement>();
   const windowRef = useRef<Window>();
@@ -160,7 +160,7 @@ export function BottomSheetTokenSearch() {
               drag="y"
               dragConstraints={{ top: 0 }}
               onDragEnd={(e, { offset, velocity }) => {
-                if (offset.y > window.innerHeight * 0.75 || velocity.y > 10) {
+                if (offset.y > window.innerHeight * 0.75 || velocity.y > 130) {
                   setOpen(false);
                 } else {
                   animate(y, 0, { ...inertiaTransition, min: 0, max: 0 });
@@ -195,17 +195,23 @@ export function BottomSheetTokenSearch() {
                     Close
                   </Button>
                 </div>
-                <List
-                  className=""
-                  height={dimensions.height + 20}
-                  itemCount={tokenList.length}
-                  itemSize={70}
-                  width={dimensions.width}
-                  itemData={tokenList}
-                  overscanCount={10}
+                <div
+                  onScroll={() => {
+                    console.log("scroll");
+                  }}
                 >
-                  {Row}
-                </List>
+                  <List
+                    className=""
+                    height={dimensions.height + 20}
+                    itemCount={tokenList.length}
+                    itemSize={70}
+                    width={dimensions.width}
+                    itemData={tokenList}
+                    overscanCount={10}
+                  >
+                    {Row}
+                  </List>
+                </div>
                 {/* <ListBox
                   aria-label="Animals"
                   items={suggestions}
