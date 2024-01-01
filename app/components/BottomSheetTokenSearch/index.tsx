@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { FixedSizeList as List } from "react-window";
 import {
   motion,
   animate,
@@ -11,11 +12,35 @@ import {
 
 import {
   Modal,
+  SearchField,
   Button,
   Dialog,
-  Heading,
   ModalOverlay,
+  Input,
+  Label,
 } from "react-aria-components";
+import { tokenList } from "~/tokenList";
+
+const Row = ({ index, style }: any) => {
+  const item = tokenList[index];
+  return (
+    <div style={style}>
+      <button className="w-full text-left px-2 py-4 flex items-center">
+        <img
+          alt={item.symbol}
+          src={item.logoURI}
+          className="rounded-full"
+          style={{ width: "3rem", height: "3rem" }}
+        />
+        &nbsp;&nbsp;&nbsp;
+        <span className="flex flex-col">
+          <span className="text-lg leading-5 font-semibold">{item.symbol}</span>
+          <span className="text-m text-slate-600 leading-5">{item.name}</span>
+        </span>
+      </button>
+    </div>
+  );
+};
 
 const MotionModal = motion(Modal);
 const MotionModalOverlay = motion(ModalOverlay);
@@ -36,6 +61,10 @@ const SHEET_MARGIN = 34;
 const SHEET_RADIUS = 12;
 
 export function BottomSheetTokenSearch() {
+  const [sellItems, setSellItems] = useState(
+    tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
+  );
+
   const rootRef = useRef<HTMLElement>();
   const windowRef = useRef<Window>();
   useEffect(() => {
@@ -45,7 +74,7 @@ export function BottomSheetTokenSearch() {
 
   const windowHeight = windowRef.current?.innerHeight || 844; // 844 is the default height of the iPhone 12 Pro
   const windowWidth = windowRef.current?.innerWidth || 390; // 390 is the default width of the iPhone 12 Pro
-  const [isOpen, setOpen] = useState(false);
+  const [isOpen, setOpen] = useState(true);
   const h = windowHeight - SHEET_MARGIN;
   const y = useMotionValue(h);
   const bgOpacity = useTransform(y, [0, h], [0.4, 0]);
@@ -82,6 +111,23 @@ export function BottomSheetTokenSearch() {
       rootRef.current.style.borderRadius = `${v}px`;
     }
   });
+
+  const motionModalRef = useRef<HTMLElement | SVGElement | null>(null);
+
+  const [dimensions, setDimensions] = useState<{
+    width: number;
+    height: number;
+  }>({
+    width: 390,
+    height: 844,
+  });
+
+  useEffect(() => {
+    const width = window.innerWidth || 390;
+    const height = motionModalRef.current?.clientHeight || 844;
+
+    setDimensions({ width, height });
+  }, []);
 
   return (
     <>
@@ -121,30 +167,70 @@ export function BottomSheetTokenSearch() {
                 }
               }}
               className="bg-[--page-background] absolute bottom-0 w-full rounded-t-xl shadow-lg will-change-transform"
+              ref={motionModalRef}
             >
               {/* drag affordance */}
               <div className="mx-auto w-12 mt-2 h-1.5 rounded-full bg-gray-400" />
-              <Dialog className="px-4 pb-4 outline-none">
-                <div className="flex justify-end">
+              <Dialog className="outline-none">
+                <div className="border-b border-purple-400 py-4 flex">
+                  <SearchField>
+                    <Label className="sr-only">Search</Label>
+                    <Input
+                      onChange={(e) => {
+                        console.log(e.target.value);
+                        const results = tokenList.filter((item) => {
+                          return item.symbol
+                            .toLowerCase()
+                            .includes(e.target.value.toLowerCase());
+                        });
+                        console.log(results);
+                        // setSuggestions(results);
+                      }}
+                    />
+                  </SearchField>
                   <Button
                     onPress={() => setOpen(false)}
-                    className="text-blue-600 text-lg font-semibold mb-8 outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
+                    className="text-blue-600 text-lg font-semibold outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
                   >
-                    Done
+                    Close
                   </Button>
                 </div>
-                <Heading slot="title" className="text-3xl font-semibold mb-4">
-                  Modal sheet
-                </Heading>
-                <p className="text-lg mb-4">
-                  This is a dialog with a custom modal overlay built with React
-                  Aria Components and Framer Motion.
-                </p>
-                <p className="text-lg">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                  Aenean sit amet nisl blandit, pellentesque eros eu,
-                  scelerisque eros. Sed cursus urna at nunc lacinia dapibus.
-                </p>
+                <List
+                  className=""
+                  height={dimensions.height + 20}
+                  itemCount={tokenList.length}
+                  itemSize={70}
+                  width={dimensions.width}
+                  itemData={tokenList}
+                  overscanCount={10}
+                >
+                  {Row}
+                </List>
+                {/* <ListBox
+                  aria-label="Animals"
+                  items={suggestions}
+                  selectionMode="single"
+                  className="overflow-y-scroll"
+                  style={{ height: "calc(100vh - 184px)" }}
+                >
+                  {(item) => (
+                    <ListBoxItem
+                      id={item.address}
+                      key={item.address}
+                      textValue={item.symbol}
+                      className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[focused]:bg-purple-900 data-[focused]:dark:bg-purple-800 data-[focused]:text-white data-[disabled]:bg-gray-100"
+                    >
+                      <img
+                        alt={item.symbol}
+                        src={item.logoURI}
+                        className="rounded-full"
+                        style={{ width: "1.5rem", height: "1.5rem" }}
+                      />
+                      &nbsp;
+                      <span>{item.symbol}</span>
+                    </ListBoxItem>
+                  )}
+                </ListBox> */}
               </Dialog>
             </MotionModal>
           </MotionModalOverlay>

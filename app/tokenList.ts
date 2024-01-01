@@ -65,6 +65,7 @@ export const DEFAULT_TOKENS = [
   },
 ];
 
+// 713 items
 export const tokenList = [
   {
     address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
