@@ -26,17 +26,17 @@
 [x] refactor and create useQuote + remove fetching state from reducer
 [x] refactor everything that can be moved to react-query
 [x] introduce iOS-style modal sheet
+[x] implement mobile combobox
 [x] swipe down at the beginning of list should not dismiss sheet
+[ ] broken image should have a fallback
 [ ] only show insufficient balance message is wallet is connected
 [ ] max button populates the sell input
-[ ] implement mobile combobox
-[ ] show "trending" suggestions as the initial suggestions
-[ ] dynamically fetch token list
-[ ] persist token list in index db
+[ ] tokelist: dynamically fetch token list
+[ ] tokelist: async defer the token list
+[ ] tokelist: persist token list in index db
 [ ] handles unconnected state?
 [ ] handles reverts?
 [ ] handless API errors from Jupiter
-[ ] async defer the token list
 [ ] store transactions in local storage or even better in a cookie string
 [ ] tab shows transaction history
 [ ] store transactions in pocketbase or indexDB
@@ -48,3 +48,5 @@
 [ ] show price impact
 [ ] allow user to set slippage
 [ ] show route plan
+[ ] dark mode
+[ ] i18n

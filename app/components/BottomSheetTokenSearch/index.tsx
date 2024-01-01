@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect } from "react";
-import { FixedSizeList as List } from "react-window";
+import { memo, useRef, useState, useEffect } from "react";
+import { FixedSizeList as List, areEqual } from "react-window";
 import {
   motion,
   animate,
@@ -14,32 +14,50 @@ import {
   Modal,
   Button,
   Dialog,
+  Heading,
   ModalOverlay,
   Input,
   Label,
 } from "react-aria-components";
 import { tokenList } from "~/tokenList";
+import type { Token } from "~/types";
 
-const Row = ({ index, style }: any) => {
-  const item = tokenList[index];
-  return (
-    <div style={style}>
-      <button className="w-full text-left px-4 py-4 flex items-center">
-        <img
-          alt={item.symbol}
-          src={item.logoURI}
-          className="rounded-full"
-          style={{ width: "3rem", height: "3rem" }}
-        />
-        &nbsp;&nbsp;&nbsp;
-        <span className="flex flex-col">
-          <span className="text-lg leading-5 font-semibold">{item.symbol}</span>
-          <span className="text-m text-slate-600 leading-5">{item.name}</span>
-        </span>
-      </button>
-    </div>
-  );
-};
+const Row = memo(
+  ({
+    index,
+    style,
+    data,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+    data: Token[];
+  }) => {
+    const item = data[index];
+
+    return (
+      <div style={style}>
+        <button className="w-full text-left px-4 py-4 flex items-center">
+          <img
+            alt={item.symbol}
+            src={item.logoURI}
+            className="rounded-full"
+            style={{ width: "3rem", height: "3rem" }}
+          />
+          &nbsp;&nbsp;&nbsp;
+          <span className="flex flex-col">
+            <span className="text-lg leading-5 font-semibold">
+              {item.symbol}
+            </span>
+            <span className="text-m text-slate-600 leading-5">{item.name}</span>
+          </span>
+        </button>
+      </div>
+    );
+  },
+  areEqual
+);
+
+Row.displayName = "Row";
 
 const MotionModal = motion(Modal);
 const MotionModalOverlay = motion(ModalOverlay);
@@ -60,9 +78,7 @@ const SHEET_MARGIN = 34;
 const SHEET_RADIUS = 12;
 
 export function BottomSheetTokenSearch() {
-  // const [sellItems, setSellItems] = useState(
-  //   tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
-  // );
+  const [suggestions, setSuggestions] = useState(tokenList);
 
   const rootRef = useRef<HTMLElement>();
   const windowRef = useRef<Window>();
@@ -168,16 +184,18 @@ export function BottomSheetTokenSearch() {
               className="bg-[--page-background] absolute bottom-0 w-full rounded-t-xl shadow-lg will-change-transform"
               ref={motionModalRef}
             >
-              {/* drag affordance */}
               <div className="mx-auto w-12 mt-2 h-1.5 rounded-full bg-gray-400" />
               <Dialog className="outline-none">
+                <Heading slot="title" className="sr-only">
+                  Find any token on Solana.
+                </Heading>
                 <div className="border-b border-purple-400 py-4 w-full">
                   <Label className="sr-only">Search</Label>
                   <div className="flex items-center ml-4">
                     <span className="absolute left-[28px]">🔍</span>
                     <Input
                       placeholder="Search…"
-                      className="border rounded-full pl-8 h-9 w-full"
+                      className="border rounded-full pl-9 h-10 w-full"
                       onChange={(e) => {
                         console.log(e.target.value);
                         const results = tokenList.filter((item) => {
@@ -186,12 +204,12 @@ export function BottomSheetTokenSearch() {
                             .includes(e.target.value.toLowerCase());
                         });
                         console.log(results);
-                        // setSuggestions(results);
+                        setSuggestions(results);
                       }}
                     />
                     <Button
                       onPress={() => setOpen(false)}
-                      className="px-4 py-2 text-blue-600 text-lg font-semibold outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
+                      className="px-4 py-2 text-purple-600 text-lg font-semibold outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
                     >
                       Close
                     </Button>
@@ -205,40 +223,15 @@ export function BottomSheetTokenSearch() {
                   <List
                     className=""
                     height={dimensions.height + 20}
-                    itemCount={tokenList.length}
+                    itemCount={suggestions.length}
                     itemSize={70}
                     width={dimensions.width}
-                    itemData={tokenList}
+                    itemData={suggestions}
                     overscanCount={10}
                   >
                     {Row}
                   </List>
                 </div>
-                {/* <ListBox
-                  aria-label="Animals"
-                  items={suggestions}
-                  selectionMode="single"
-                  className="overflow-y-scroll"
-                  style={{ height: "calc(100vh - 184px)" }}
-                >
-                  {(item) => (
-                    <ListBoxItem
-                      id={item.address}
-                      key={item.address}
-                      textValue={item.symbol}
-                      className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[focused]:bg-purple-900 data-[focused]:dark:bg-purple-800 data-[focused]:text-white data-[disabled]:bg-gray-100"
-                    >
-                      <img
-                        alt={item.symbol}
-                        src={item.logoURI}
-                        className="rounded-full"
-                        style={{ width: "1.5rem", height: "1.5rem" }}
-                      />
-                      &nbsp;
-                      <span>{item.symbol}</span>
-                    </ListBoxItem>
-                  )}
-                </ListBox> */}
               </Dialog>
             </MotionModal>
           </MotionModalOverlay>
