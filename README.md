@@ -31,11 +31,11 @@
 [x] sell token search button should open bottom sheet
 [-] restructure mobile designs: create modal + sheet trigger
 [ ] animate and turn chevron for token search buttons
-[ ] selecting the same opposite token should flip the trade direction
+[x] selecting the same opposite token should flip the trade direction
 [ ] add 🔍 and chevron svg icon
 [ ] token search trigger should have all button states
 [ ] broken image should have a fallback
-[ ] only show insufficient balance message is wallet is connected
+[x] only show insufficient balance message is wallet is connected
 [ ] max button populates the sell input
 [ ] tokelist: dynamically fetch token list
 [ ] tokelist: async defer the token list

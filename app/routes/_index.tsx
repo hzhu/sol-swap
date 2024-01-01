@@ -145,6 +145,10 @@ export default function Index() {
               <BottomSheetTokenSearch
                 onSelect={(token: Token) => {
                   if (token.address === sellToken.address) return;
+                  if (token.address === buyToken.address) {
+                    dispatch({ type: "reverse trade direction" });
+                    return;
+                  }
                   // TODO: swap tokens if the same
                   dispatch({ type: "set sell token", payload: token });
                 }}
@@ -269,7 +273,7 @@ export default function Index() {
               </ComboBox>
             </div>
           </div>
-          {insufficientBalance && (
+          {connected && insufficientBalance && (
             <div className="text-center bg-red-200 my-2 border border-red-600 rounded-md py-2">
               Insufficient balance: You don't have enough {sellToken.symbol}.
             </div>
