@@ -88,18 +88,6 @@ body {
   }
 } */
 
-.react-aria-Button {
-  background: white;
-  color: white;
-  border-radius: 4px;
-  border: none;
-  margin-left: -1.714rem;
-  width: 1.429rem;
-  height: 1.429rem;
-  padding: 0;
-  font-size: 0.857rem;
-}
-
 @layer popover {
   .react-aria-Popover {
     width: var(--trigger-width);

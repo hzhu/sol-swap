@@ -162,13 +162,25 @@ export default function Index() {
                   </svg>
                 </BottomSheetTrigger>
               </BottomSheetTokenSearch>
-              {connected ? (
-                <Text className="text-xs block mt-2 mr-1 text-end h-4 text-nowrap">
-                  {balance && balanceUi
-                    ? `Balance: ${balanceUi.uiAmountString}`
-                    : `Balance: 0`}
-                </Text>
-              ) : null}
+              <div className="flex items-center mt-2">
+                {connected ? (
+                  <Text className="text-xs blockmr-1 text-end text-nowrap">
+                    {balance && balanceUi
+                      ? `Balance: ${balanceUi.uiAmountString}`
+                      : `Balance: 0`}
+                  </Text>
+                ) : null}
+                {connected && balance && balanceUi && (
+                  <Button
+                    className="font-semibold text-xs text-purple-800 hover:bg-purple-800 hover:text-white py-0.5 px-1 rounded-md relative bottom-px left-0.5"
+                    onPress={() => {
+                      alert("Sell max feature coming soon!");
+                    }}
+                  >
+                    max
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">

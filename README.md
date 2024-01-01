@@ -32,8 +32,9 @@
 [x] sell token search button should open bottom sheet
 [x] restructure mobile designs: create modal + sheet trigger
 [x] selecting the same opposite token should flip the trade direction
+[x] add max button ui
+[-] add max button ui logic
 [ ] loading skeleton for when receive amount is pending
-[ ] max button populates the sell input
 [ ] introduce font-awesome
 [ ] add warning icon to insufficient balance
 [ ] add 🔍 and chevron svg icon
