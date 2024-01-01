@@ -84,19 +84,21 @@ export const initialState = {
   },
 };
 
+const reverseTradeDirection = (state: ReducerState) => ({
+  ...state,
+  sellAmount: state.buyAmount,
+  buyAmount: "",
+  buyToken: state.sellToken,
+  sellToken: state.buyToken,
+  sellSymbolInput: state.buyToken.symbol,
+  buySymbolInput: state.sellToken.symbol,
+  fetchingQuote: state.sellAmount !== "",
+});
+
 export const reducer = (state: ReducerState, action: ActionTypes) => {
   switch (action.type) {
     case "reverse trade direction":
-      return {
-        ...state,
-        sellAmount: state.buyAmount,
-        buyAmount: "",
-        buyToken: state.sellToken,
-        sellToken: state.buyToken,
-        sellSymbolInput: state.buyToken.symbol,
-        buySymbolInput: state.sellToken.symbol,
-        fetchingQuote: state.sellAmount !== "",
-      };
+      return reverseTradeDirection(state);
 
     case "set sell amount":
       return {
@@ -109,12 +111,22 @@ export const reducer = (state: ReducerState, action: ActionTypes) => {
         buyAmount: action.payload,
       };
     case "set sell token":
+      if (action.payload.address === state.sellToken.address) return state;
+      if (action.payload.address === state.buyToken.address) {
+        return reverseTradeDirection(state);
+      }
+
       return {
         ...state,
         sellToken: action.payload,
         sellSymbolInput: action.payload.symbol,
       };
     case "set buy token":
+      if (action.payload.address === state.buyToken.address) return state;
+      if (action.payload.address === state.sellToken.address) {
+        return reverseTradeDirection(state);
+      }
+
       return {
         ...state,
         buyToken: action.payload,

@@ -28,16 +28,20 @@
 [x] introduce iOS-style modal sheet
 [x] implement mobile combobox
 [x] swipe down at the beginning of list should not dismiss sheet
-[x] sell token search button should open bottom sheet
-[-] restructure mobile designs: create modal + sheet trigger
-[ ] animate and turn chevron for token search buttons
-[x] selecting the same opposite token should flip the trade direction
-[ ] add 🔍 and chevron svg icon
-[ ] token search trigger should have all button states
-[ ] add pending state to balance fetch so doesn't flash 0
-[ ] broken image should have a fallback
 [x] only show insufficient balance message is wallet is connected
+[x] sell token search button should open bottom sheet
+[x] restructure mobile designs: create modal + sheet trigger
+[x] selecting the same opposite token should flip the trade direction
+[ ] loading skeleton for when receive amount is pending
 [ ] max button populates the sell input
+[ ] introduce font-awesome
+[ ] add warning icon to insufficient balance
+[ ] add 🔍 and chevron svg icon
+[ ] close button for bottom sheet should have some affordance (button states)
+[ ] add pending state to balance fetch so doesn't flash 0
+[ ] animate and turn chevron for token search buttons
+[ ] token search trigger should have all button states
+[ ] broken image should have a fallback
 [ ] tokenlist: dynamically fetch token list
 [ ] tokenlist: async defer the token list
 [ ] tokenlist: persist token list in index db
@@ -57,4 +61,3 @@
 [ ] show route plan
 [ ] dark mode
 [ ] i18n
-[ ] close button for bottom sheet should have some affordance (button states)

@@ -104,7 +104,7 @@ export default function Index() {
               htmlFor="sell-input"
               className="text-base cursor-pointer font-semibold w-2/3"
             >
-              <div>You sell</div>
+              <div>Sell</div>
               <Input
                 autoFocus
                 name="sol"
@@ -119,7 +119,7 @@ export default function Index() {
                 inputMode="decimal"
                 value={sellAmount}
                 pattern="^[0-9]*[.,]?[0-9]*$"
-                className="pl-3 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl"
+                className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl"
                 onChange={(e) => {
                   if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
                     dispatch({
@@ -136,12 +136,6 @@ export default function Index() {
             <div className="flex items-end ml-3 flex-col justify-center">
               <BottomSheetTokenSearch
                 onSelect={(token: Token) => {
-                  if (token.address === sellToken.address) return;
-                  if (token.address === buyToken.address) {
-                    dispatch({ type: "reverse trade direction" });
-                    return;
-                  }
-                  // TODO: swap tokens if the same
                   dispatch({ type: "set sell token", payload: token });
                 }}
               >
@@ -193,7 +187,7 @@ export default function Index() {
               htmlFor="buy-input"
               className="text-base cursor-not-allowed font-semibold w-2/3"
             >
-              <div>You receive</div>
+              <div>Receive</div>
               <Input
                 disabled
                 type="text"
@@ -201,17 +195,12 @@ export default function Index() {
                 name="buy-input"
                 placeholder="0.0"
                 value={buyAmount}
-                className="pl-3 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
+                className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
               />
             </label>
             <div className="flex items-end ml-3 flex-col justify-center">
               <BottomSheetTokenSearch
                 onSelect={(token: Token) => {
-                  if (token.address === buyToken.address) return;
-                  if (token.address === sellToken.address) {
-                    dispatch({ type: "reverse trade direction" });
-                    return;
-                  }
                   dispatch({ type: "set buy token", payload: token });
                 }}
               >
@@ -241,8 +230,8 @@ export default function Index() {
             </div>
           </div>
           {connected && insufficientBalance && (
-            <div className="text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2">
-              Insufficient balance: You don't have enough {sellToken.symbol}.
+            <div className="text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
+              ⚠️ Insufficient balance: You don't have enough {sellToken.symbol}.
             </div>
           )}
           <div className="my-1">
