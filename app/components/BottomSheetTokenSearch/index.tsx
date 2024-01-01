@@ -12,7 +12,6 @@ import {
 
 import {
   Modal,
-  SearchField,
   Button,
   Dialog,
   ModalOverlay,
@@ -25,7 +24,7 @@ const Row = ({ index, style }: any) => {
   const item = tokenList[index];
   return (
     <div style={style}>
-      <button className="w-full text-left px-2 py-4 flex items-center">
+      <button className="w-full text-left px-4 py-4 flex items-center">
         <img
           alt={item.symbol}
           src={item.logoURI}
@@ -172,10 +171,13 @@ export function BottomSheetTokenSearch() {
               {/* drag affordance */}
               <div className="mx-auto w-12 mt-2 h-1.5 rounded-full bg-gray-400" />
               <Dialog className="outline-none">
-                <div className="border-b border-purple-400 py-4 flex">
-                  <SearchField>
-                    <Label className="sr-only">Search</Label>
+                <div className="border-b border-purple-400 py-4 w-full">
+                  <Label className="sr-only">Search</Label>
+                  <div className="flex items-center ml-4">
+                    <span className="absolute left-[28px]">🔍</span>
                     <Input
+                      placeholder="Search…"
+                      className="border rounded-full pl-8 h-9 w-full"
                       onChange={(e) => {
                         console.log(e.target.value);
                         const results = tokenList.filter((item) => {
@@ -187,13 +189,13 @@ export function BottomSheetTokenSearch() {
                         // setSuggestions(results);
                       }}
                     />
-                  </SearchField>
-                  <Button
-                    onPress={() => setOpen(false)}
-                    className="text-blue-600 text-lg font-semibold outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
-                  >
-                    Close
-                  </Button>
+                    <Button
+                      onPress={() => setOpen(false)}
+                      className="px-4 py-2 text-blue-600 text-lg font-semibold outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
+                    >
+                      Close
+                    </Button>
+                  </div>
                 </div>
                 <div
                   onScroll={() => {
