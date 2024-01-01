@@ -58,7 +58,7 @@ const Row = memo(
       <div style={style}>
         <button
           onClick={() => onClick(item)}
-          className="w-full text-left px-4 py-4 flex items-center"
+          className="w-full text-left px-4 py-4 flex items-center hover:bg-purple-500 hover:text-white"
         >
           <img
             alt={item.symbol}
@@ -71,7 +71,7 @@ const Row = memo(
             <span className="text-lg leading-5 font-semibold">
               {item.symbol}
             </span>
-            <span className="text-m text-slate-600 leading-5">{item.name}</span>
+            <span className="leading-5">{item.name}</span>
           </span>
         </button>
       </div>
@@ -213,7 +213,7 @@ export function BottomSheetTokenSearch(props: {
                   <div className="flex items-center ml-4">
                     <span className="absolute left-[28px]">🔍</span>
                     <Input
-                      placeholder="Search…"
+                      placeholder="Search for any token…"
                       className="border rounded-full pl-9 h-10 w-full"
                       onChange={(e) => {
                         console.log(e.target.value);
