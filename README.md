@@ -34,6 +34,7 @@
 [x] selecting the same opposite token should flip the trade direction
 [ ] add 🔍 and chevron svg icon
 [ ] token search trigger should have all button states
+[ ] add pending state to balance fetch so doesn't flash 0
 [ ] broken image should have a fallback
 [x] only show insufficient balance message is wallet is connected
 [ ] max button populates the sell input

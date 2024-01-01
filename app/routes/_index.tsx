@@ -6,12 +6,7 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
   Button,
-  ComboBox,
   Input,
-  Label,
-  ListBox,
-  ListBoxItem,
-  Popover,
   Text,
   Dialog,
   Heading,
@@ -85,7 +80,7 @@ export default function Index() {
     tokenList.filter((item) => item.symbol.toLowerCase().includes("usdc"))
   );
 
-  const balanceUi =
+  const balanceUi = // TODO: fix type
     sellToken.address === "So11111111111111111111111111111111111111112"
       ? balance
       : tokenBalance;
@@ -98,17 +93,16 @@ export default function Index() {
 
   return (
     <main
-      className="sm:max-w-2xl mx-auto text-lg mt-10 sm:mt-40"
+      className="sm:max-w-lg mx-auto text-lg mt-10 sm:mt-40"
       style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
     >
       <section>
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Form>
-          <div className="bg-slate-300 flex justify-between border rounded-2xl px-3">
+          <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
             <label
               htmlFor="sell-input"
-              className="text-base cursor-pointer font-semibold pt-[21px] w-1/2"
-              style={{ height: "130px" }}
+              className="text-base cursor-pointer font-semibold w-2/3"
             >
               <div>You sell</div>
               <Input
@@ -125,7 +119,7 @@ export default function Index() {
                 inputMode="decimal"
                 value={sellAmount}
                 pattern="^[0-9]*[.,]?[0-9]*$"
-                className="px-3 py-2 rounded-lg border-0 w-48 outline-none bg-transparent text-3xl"
+                className="pl-3 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl"
                 onChange={(e) => {
                   if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
                     dispatch({
@@ -139,9 +133,6 @@ export default function Index() {
                 }}
               />
             </label>
-            {/* <Text className="text-xs block mt-2 text-end h-4">
-              {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
-            </Text> */}
             <div className="flex items-end ml-3 flex-col justify-center">
               <BottomSheetTokenSearch
                 onSelect={(token: Token) => {
@@ -156,7 +147,7 @@ export default function Index() {
               >
                 <BottomSheetTrigger className="flex items-center bg-purple-800 text-white rounded-full p-1">
                   <img
-                    alt="sol"
+                    alt={sellToken.name}
                     src={sellToken.logoURI}
                     className="w-8 h-8 m-0 p-0 rounded-full"
                   />
@@ -177,9 +168,13 @@ export default function Index() {
                   </svg>
                 </BottomSheetTrigger>
               </BottomSheetTokenSearch>
-              <Text className="text-xs block mt-2 text-end h-4">
-                {balanceUi && `Balance: ${balanceUi.uiAmountString}`}
-              </Text>
+              {connected ? (
+                <Text className="text-xs block mt-2 mr-1 text-end h-4">
+                  {balance && balanceUi
+                    ? `Balance: ${balanceUi.uiAmountString}`
+                    : `Balance: 0`}
+                </Text>
+              ) : null}
             </div>
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
@@ -193,96 +188,64 @@ export default function Index() {
               className="border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
             />
           </div>
-          <div className="sm:flex sm:items-center sm:justify-between bg-green-300 rounded-bl-lg rounded-br-lg p-4 mb-2">
-            <div className="sm:mr-12">
-              <div>
-                <label htmlFor="buy-input" className="text-base font-semibold">
-                  You receive
-                </label>
-                <div className="flex items-center">
-                  <img
-                    alt="sol"
-                    src={buyToken.logoURI}
-                    className="w-12 h-12 m-0 p-0 mr-3 rounded-full"
-                  />
-                  <input
-                    disabled
-                    type="text"
-                    id="buy-input"
-                    name="buy-input"
-                    placeholder="0.0"
-                    value={buyAmount}
-                    className="px-3 py-2 rounded-lg border cursor-not-allowed bg-gray-200 w-full"
-                  />
-                </div>
-              </div>
-            </div>
-            <div>
-              <ComboBox
-                menuTrigger="focus"
-                items={buyItems}
-                onInputChange={(value: string) => {
-                  dispatch({ type: "set buy symbol input", payload: value });
-                  const newItems = tokenList.filter((token) => {
-                    return token.symbol
-                      .toLowerCase()
-                      .includes(value.toLowerCase());
-                  });
-                  setBuyItems(newItems.slice(0, 7));
-                }}
-                inputValue={state.buySymbolInput}
-                selectedKey={buyToken.address}
-                onSelectionChange={(id) => {
-                  const selectedItem = buyItems.find((o) => o.address === id);
-                  if (!selectedItem) return;
-                  if (selectedItem.address === sellToken.address) {
+          <div className="bg-slate-300 flex items-center justify-between rounded-2xl px-3 h-28 cursor-not-allowed">
+            <label
+              htmlFor="buy-input"
+              className="text-base cursor-not-allowed font-semibold w-2/3"
+            >
+              <div>You receive</div>
+              <Input
+                disabled
+                type="text"
+                id="buy-input"
+                name="buy-input"
+                placeholder="0.0"
+                value={buyAmount}
+                className="pl-3 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
+              />
+            </label>
+            <div className="flex items-end ml-3 flex-col justify-center">
+              <BottomSheetTokenSearch
+                onSelect={(token: Token) => {
+                  if (token.address === buyToken.address) return;
+                  if (token.address === sellToken.address) {
                     dispatch({ type: "reverse trade direction" });
-                  } else {
-                    selectedItem &&
-                      dispatch({
-                        type: "set buy token",
-                        payload: selectedItem,
-                      });
+                    return;
                   }
+                  dispatch({ type: "set buy token", payload: token });
                 }}
               >
-                <Label className="text-xs cursor-pointer">
-                  Search for any token
-                </Label>
-                <div>
-                  <Input className="px-3 py-2 rounded-lg border w-full border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900" />
-                  <Button>🔍</Button>
-                </div>
-                <Popover>
-                  <ListBox>
-                    {(item: Token) => (
-                      <ListBoxItem
-                        id={item.address}
-                        key={item.address}
-                        textValue={item.symbol}
-                        className="flex font-sans items-center px-4 py-3 cursor-pointer outline-none border-0 border-none rounded-md data-[focused]:bg-purple-900 data-[focused]:dark:bg-purple-800 data-[focused]:text-white data-[disabled]:bg-gray-100"
-                      >
-                        <img
-                          alt={item.symbol}
-                          src={item.logoURI}
-                          className="rounded-full"
-                          style={{ width: "1.5rem", height: "1.5rem" }}
-                        />
-                        &nbsp;
-                        <span>{item.symbol}</span>
-                      </ListBoxItem>
-                    )}
-                  </ListBox>
-                </Popover>
-              </ComboBox>
+                <BottomSheetTrigger className="flex items-center bg-purple-800 text-white rounded-full p-1">
+                  <img
+                    alt={buyToken.name}
+                    src={buyToken.logoURI}
+                    className="w-8 h-8 m-0 p-0 rounded-full"
+                  />
+                  <span className="mx-2">{buyToken.symbol}</span>
+                  <svg
+                    className="mr-2"
+                    aria-hidden="true"
+                    focusable="false"
+                    role="img"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                    width="12"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
+                    ></path>
+                  </svg>
+                </BottomSheetTrigger>
+              </BottomSheetTokenSearch>
             </div>
           </div>
           {connected && insufficientBalance && (
-            <div className="text-center bg-red-200 my-2 border border-red-600 rounded-md py-2">
+            <div className="text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2">
               Insufficient balance: You don't have enough {sellToken.symbol}.
             </div>
           )}
-          <div className="px-4 sm:px-0 my-2">
+          <div className="px-4 sm:px-0 my-1">
             {connected ? (
               <button
                 type="button"
