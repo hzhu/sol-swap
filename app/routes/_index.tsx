@@ -33,6 +33,7 @@ import type { Token } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
 import reactAriaStyles from "~/styles/react-aria.css";
 import solanaWalletStyles from "~/styles/solana-wallet.css";
+import { WSOL } from "~/constants";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: tailwindStyles },
@@ -80,16 +81,13 @@ export default function Index() {
     tokenList.filter((item) => item.symbol.toLowerCase().includes("usdc"))
   );
 
-  const balanceUi = // TODO: fix type
-    sellToken.address === "So11111111111111111111111111111111111111112"
-      ? balance
-      : tokenBalance;
+  const isSellingSol = sellToken.address === WSOL;
+
+  const balanceUi = isSellingSol ? balance : tokenBalance;
 
   const insufficientBalance =
-    balanceUi === undefined && sellAmount !== ""
-      ? true
-      : lamportsToTokenUnits(Number(quote?.inAmount), sellToken.decimals) >=
-        balanceUi?.uiAmount;
+    (!balanceUi ? 0 : balanceUi.uiAmount) <
+    lamportsToTokenUnits(Number(quote?.inAmount), sellToken.decimals);
 
   return (
     <main
@@ -174,7 +172,19 @@ export default function Index() {
                   <Button
                     className="font-semibold text-xs text-purple-800 hover:bg-purple-800 hover:text-white py-0.5 px-1 rounded-md relative bottom-px left-0.5"
                     onPress={() => {
-                      alert("Sell max feature coming soon!");
+                      if (isSellingSol) {
+                        const gasBuffer = 0.000004;
+                        const payload = subtractFloats(
+                          balance.uiAmount,
+                          gasBuffer
+                        ).toString();
+                        dispatch({ type: "set sell amount", payload });
+                      } else {
+                        dispatch({
+                          type: "set sell amount",
+                          payload: tokenBalance?.uiAmountString || "",
+                        });
+                      }
                     }}
                   >
                     max
@@ -363,4 +373,12 @@ export default function Index() {
       </Modal>
     </main>
   );
+}
+
+export function subtractFloats(a: number, b: number, precision = 9) {
+  const scale = Math.pow(10, precision);
+  const scaledA = a * scale;
+  const scaledB = b * scale;
+  const result = scaledA - scaledB;
+  return result / scale;
 }

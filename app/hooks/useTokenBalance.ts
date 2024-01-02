@@ -4,6 +4,13 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import type { Connection, PublicKey } from "@solana/web3.js";
 import type { Token } from "~/types";
 
+interface tokenAmount {
+  amount: string;
+  decimals: number;
+  uiAmount: number;
+  uiAmountString: string;
+}
+
 export function useTokenBalance({
   token,
   connection,
@@ -32,7 +39,7 @@ export function useTokenBalance({
       });
 
       if (balance) {
-        return balance.account.data.parsed.info.tokenAmount;
+        return balance.account.data.parsed.info.tokenAmount as tokenAmount;
       }
     }
 

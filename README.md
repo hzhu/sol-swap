@@ -32,11 +32,12 @@
 [x] sell token search button should open bottom sheet
 [x] restructure mobile designs: create modal + sheet trigger
 [x] selecting the same opposite token should flip the trade direction
+[x] add warning icon to insufficient balance
 [x] add max button ui
-[-] add max button ui logic
+[x] add max button ui logic
+[ ] can connect to phantom wallet on mobile phone
 [ ] loading skeleton for when receive amount is pending
 [ ] introduce font-awesome
-[ ] add warning icon to insufficient balance
 [ ] add 🔍 and chevron svg icon
 [ ] close button for bottom sheet should have some affordance (button states)
 [ ] add pending state to balance fetch so doesn't flash 0
