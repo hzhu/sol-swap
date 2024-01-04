@@ -58,7 +58,7 @@ const Row = memo(
       <div style={style}>
         <button
           onClick={() => onClick(item)}
-          className="w-full text-left px-4 py-4 flex items-center hover:bg-purple-500 hover:text-white"
+          className="w-full text-left px-4 py-4 flex items-center sm:hover:bg-purple-500 sm:hover:text-white"
         >
           <img
             alt={item.symbol}
@@ -194,7 +194,7 @@ export function BottomSheetTokenSearch(props: {
               drag="y"
               dragConstraints={{ top: 0 }}
               onDragEnd={(e, { offset, velocity }) => {
-                if (offset.y > window.innerHeight * 0.75 || velocity.y > 130) {
+                if (offset.y > window.innerHeight * 0.75 || velocity.y > 300) {
                   setOpen(false);
                 } else {
                   animate(y, 0, { ...inertiaTransition, min: 0, max: 0 });
@@ -234,18 +234,16 @@ export function BottomSheetTokenSearch(props: {
                     </Button>
                   </div>
                 </div>
-                <div>
-                  <List
-                    itemSize={70}
-                    width={widthz}
-                    height={heightz - 125} // 125px is the height of the search bar & is used as offset
-                    itemData={itemData}
-                    overscanCount={10}
-                    itemCount={suggestions.length}
-                  >
-                    {Row}
-                  </List>
-                </div>
+                <List
+                  itemSize={70}
+                  width={widthz}
+                  height={heightz - 125} // 125px is the height of the search bar & is used as offset
+                  itemData={itemData}
+                  overscanCount={10}
+                  itemCount={suggestions.length}
+                >
+                  {Row}
+                </List>
               </Dialog>
             </MotionModal>
           </MotionModalOverlay>
