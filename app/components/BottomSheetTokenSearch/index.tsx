@@ -6,10 +6,6 @@ import {
   forwardRef,
   useContext,
   createContext,
-  type ReactNode,
-  type ButtonHTMLAttributes,
-  type SetStateAction,
-  type Dispatch,
 } from "react";
 import { FixedSizeList as List, areEqual } from "react-window";
 import {
@@ -32,6 +28,8 @@ import {
   Label,
 } from "react-aria-components";
 import { tokenList } from "~/tokenList";
+import type { ReactNode, SetStateAction, Dispatch } from "react";
+import type { AriaButtonProps } from "react-aria";
 import type { Token } from "~/types";
 
 const BottomSheetContext = createContext<Dispatch<
@@ -253,30 +251,25 @@ export function BottomSheetTokenSearch(props: {
   );
 }
 
-interface BottomSheetTriggerProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
-}
-
 // needa compose the onClick too :\
 // must be used within BottomSheetTokenSearch
 export const BottomSheetTrigger = forwardRef<
   HTMLButtonElement,
-  BottomSheetTriggerProps
->(({ children, onClick, ...props }, ref) => {
+  AriaButtonProps & { className?: string }
+>(({ children, onPress, ...props }, ref) => {
   const setOpen = useContext(BottomSheetContext);
 
   return (
-    <button
+    <Button
       {...props}
       ref={ref}
-      onClick={(e) => {
-        onClick && onClick(e);
+      onPress={(e) => {
+        onPress && onPress(e);
         setOpen && setOpen((isOpen) => !isOpen);
       }}
     >
       {children}
-    </button>
+    </Button>
   );
 });
 

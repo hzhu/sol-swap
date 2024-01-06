@@ -137,7 +137,7 @@ export default function Index() {
                   dispatch({ type: "set sell token", payload: token });
                 }}
               >
-                <BottomSheetTrigger className="flex items-center bg-purple-800 text-white rounded-full p-1">
+                <BottomSheetTrigger className="flex items-center bg-purple-700/90 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
                   <img
                     alt={sellToken.name}
                     src={sellToken.logoURI}
@@ -226,7 +226,7 @@ export default function Index() {
                   dispatch({ type: "set buy token", payload: token });
                 }}
               >
-                <BottomSheetTrigger className="flex items-center bg-purple-800 text-white rounded-full p-1">
+                <BottomSheetTrigger className="flex items-center bg-purple-700 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
                   <img
                     alt={buyToken.name}
                     src={buyToken.logoURI}
@@ -327,12 +327,13 @@ export default function Index() {
                 )}
               </button>
             ) : (
-              <button
-                onClick={() => setVisible(true)}
-                className="border-green-800 outline-none outline-2 outline-dotted  focus-visible:outline-green-900 text-lg rounded-lg text-slate-50 transition-all duration-200 bg-purple-900 dark:bg-purple-900 disabled:text-slate-100 disabled:opacity-50 hover:bg-purple-600 active:bg-purple-700 dark:hover:bg-purple-900/75 dark:active:bg-purple-900/50 py-3 w-full"
+              <Button
+                onPress={() => setVisible(true)}
+                className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+                // className="flex items-center bg-purple-700 text-white rounded-full p-1 bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
               >
                 Connect Wallet
-              </button>
+              </Button>
             )}
           </div>
         </Form>
