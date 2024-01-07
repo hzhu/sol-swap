@@ -48,6 +48,7 @@
 [ ] tokenlist: dynamically fetch token list
 [ ] tokenlist: async defer the token list
 [ ] tokenlist: persist token list in index db
+[ ] can search by address
 [ ] handles unconnected state?
 [ ] handles reverts?
 [ ] handless API errors from Jupiter

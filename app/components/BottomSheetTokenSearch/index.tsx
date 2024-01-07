@@ -166,13 +166,24 @@ export function BottomSheetTokenSearch(props: {
     setOpen(false);
   });
 
+  const [autoFocus, setAutoFocus] = useState(false);
+
+  useEffect(() => {
+    let isMobile = window.matchMedia(
+      "only screen and (max-width: 760px)"
+    ).matches;
+
+    if (!isMobile) {
+      setAutoFocus(true);
+    }
+  }, []);
+
   return (
     <BottomSheetContext.Provider value={setOpen}>
       {props.children}
       <AnimatePresence>
         {isOpen && (
           <MotionModalOverlay
-            // Force the modal to be open when AnimatePresence renders it.
             isOpen
             onOpenChange={setOpen}
             className="fixed inset-0 z-10"
@@ -211,16 +222,15 @@ export function BottomSheetTokenSearch(props: {
                   <div className="flex items-center ml-4">
                     <span className="absolute left-[28px]">🔍</span>
                     <Input
+                      autoFocus={autoFocus}
                       placeholder="Search for any token…"
                       className="border rounded-full pl-9 h-10 w-full"
                       onChange={(e) => {
-                        console.log(e.target.value);
                         const results = tokenList.filter((item) => {
                           return item.symbol
                             .toLowerCase()
                             .includes(e.target.value.toLowerCase());
                         });
-                        console.log(results);
                         setSuggestions(results);
                       }}
                     />

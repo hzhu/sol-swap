@@ -13,3 +13,11 @@ export const getProvider = () => {
 export function lamportsToTokenUnits(lamports: number, decimals: number) {
   return lamports / Math.pow(10, decimals);
 }
+
+export function subtractFloats(a: number, b: number, precision = 9) {
+  const scale = Math.pow(10, precision);
+  const scaledA = a * scale;
+  const scaledB = b * scale;
+  const result = scaledA - scaledB;
+  return result / scale;
+}

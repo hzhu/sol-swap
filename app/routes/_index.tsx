@@ -1,6 +1,6 @@
+import { useReducer } from "react";
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
-import { useReducer, useState } from "react";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -12,14 +12,14 @@ import {
   Heading,
   Modal,
 } from "react-aria-components";
-import { tokenList } from "~/tokenList";
-import { lamportsToTokenUnits } from "~/utils";
 import { initialState, reducer } from "~/reducer";
+import { subtractFloats, lamportsToTokenUnits } from "~/utils";
 import {
   Spinner,
   BottomSheetTokenSearch,
   BottomSheetTrigger,
   DirectionButton,
+  Chevron,
 } from "~/components";
 import {
   useQuote,
@@ -28,12 +28,12 @@ import {
   useProvider,
   useTokenBalance,
 } from "~/hooks";
+import { WSOL } from "~/constants";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import type { Token } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
 import reactAriaStyles from "~/styles/react-aria.css";
 import solanaWalletStyles from "~/styles/solana-wallet.css";
-import { WSOL } from "~/constants";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: tailwindStyles },
@@ -44,7 +44,7 @@ export const links: LinksFunction = () => [
 export const meta: MetaFunction = () => {
   return [
     { title: "Solana Swap" },
-    { name: "description", content: "Welcome to Remix!" },
+    { name: "description", content: "Swap tokens on Solana!" },
   ];
 };
 
@@ -74,12 +74,6 @@ export default function Index() {
     dispatch,
     debouncedSellAmount,
   });
-  const [sellItems, setSellItems] = useState(
-    tokenList.filter((item) => item.symbol.toLowerCase().includes("sol"))
-  );
-  const [buyItems, setBuyItems] = useState(
-    tokenList.filter((item) => item.symbol.toLowerCase().includes("usdc"))
-  );
 
   const isSellingSol = sellToken.address === WSOL;
 
@@ -90,10 +84,7 @@ export default function Index() {
     lamportsToTokenUnits(Number(quote?.inAmount), sellToken.decimals);
 
   return (
-    <main
-      className="sm:max-w-lg mx-auto text-lg mt-10 sm:mt-40"
-      style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.8" }}
-    >
+    <main className="sm:max-w-lg mx-auto text-lg mt-10 sm:mt-40">
       <section className="px-2">
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Form>
@@ -144,20 +135,7 @@ export default function Index() {
                     className="w-8 h-8 m-0 p-0 rounded-full"
                   />
                   <span className="mx-2">{sellToken.symbol}</span>
-                  <svg
-                    className="mr-2"
-                    aria-hidden="true"
-                    focusable="false"
-                    role="img"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 512 512"
-                    width="12"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
-                    ></path>
-                  </svg>
+                  <Chevron />
                 </BottomSheetTrigger>
               </BottomSheetTokenSearch>
               <div className="flex items-center mt-2">
@@ -196,11 +174,7 @@ export default function Index() {
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton
               isDisabled={state.isSwapping || isFetchingQuote}
-              onPress={() => {
-                setSellItems(buyItems);
-                setBuyItems(sellItems);
-                dispatch({ type: "reverse trade direction" });
-              }}
+              onPress={() => dispatch({ type: "reverse trade direction" })}
               className="disabled:bg-purple-400 disabled:text-purple-600 bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
             />
           </div>
@@ -222,7 +196,7 @@ export default function Index() {
             </label>
             <div className="flex items-end ml-3 flex-col justify-center">
               <BottomSheetTokenSearch
-                onSelect={(token: Token) => {
+                onSelect={(token) => {
                   dispatch({ type: "set buy token", payload: token });
                 }}
               >
@@ -233,20 +207,7 @@ export default function Index() {
                     className="w-8 h-8 m-0 p-0 rounded-full"
                   />
                   <span className="mx-2">{buyToken.symbol}</span>
-                  <svg
-                    className="mr-2"
-                    aria-hidden="true"
-                    focusable="false"
-                    role="img"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 512 512"
-                    width="12"
-                  >
-                    <path
-                      fill="currentColor"
-                      d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"
-                    ></path>
-                  </svg>
+                  <Chevron />
                 </BottomSheetTrigger>
               </BottomSheetTokenSearch>
             </div>
@@ -330,7 +291,6 @@ export default function Index() {
               <Button
                 onPress={() => setVisible(true)}
                 className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
-                // className="flex items-center bg-purple-700 text-white rounded-full p-1 bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
               >
                 Connect Wallet
               </Button>
@@ -374,12 +334,4 @@ export default function Index() {
       </Modal>
     </main>
   );
-}
-
-export function subtractFloats(a: number, b: number, precision = 9) {
-  const scale = Math.pow(10, precision);
-  const scaledA = a * scale;
-  const scaledB = b * scale;
-  const result = scaledA - scaledB;
-  return result / scale;
 }
