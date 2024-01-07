@@ -1,11 +1,12 @@
 import clsx from "clsx";
 import { useState, forwardRef } from "react";
-import type { ButtonHTMLAttributes } from "react";
+import { Button } from "react-aria-components";
+import type { AriaButtonProps } from "react-aria";
 
 export const DirectionButton = forwardRef<
   HTMLButtonElement,
-  ButtonHTMLAttributes<HTMLButtonElement>
->(({ onClick, className, ...props }, ref) => {
+  AriaButtonProps & { className?: string }
+>(({ onPress, className, ...props }, ref) => {
   const [rotated, setRotated] = useState(false);
   const arrowStyles = clsx(
     "transition-all duration-200",
@@ -13,23 +14,22 @@ export const DirectionButton = forwardRef<
   );
 
   return (
-    <button
+    <Button
       ref={ref}
       className={clsx(
         "w-10 h-7 text-md rounded flex items-center justify-center translate-y-1.5 select-none text-white",
-        props.disabled ? "" : "hover:bg-purple-800 active:bg-purple-900",
-        "rounded-full transition-all duration-200 bg-purple-700  disabled:bg-purple-400 disabled:text-purple-500 disabled:cursor-not-allowed",
+        "rounded-full transition-all duration-200 disabled:cursor-not-allowed",
         className
       )}
-      onClick={(e) => {
-        if (onClick) onClick(e);
+      onPress={(e) => {
+        if (onPress) onPress(e);
         setRotated(!rotated);
       }}
       {...props}
     >
       <span className={arrowStyles}>&#8595;</span>
       <span className={arrowStyles}>&#8593;</span>
-    </button>
+    </Button>
   );
 });
 

@@ -105,7 +105,7 @@ export default function Index() {
               <div>Sell</div>
               <Input
                 autoFocus
-                name="sol"
+                name="sell-input"
                 type="text"
                 minLength={1}
                 maxLength={50}
@@ -195,13 +195,13 @@ export default function Index() {
           </div>
           <div className="flex justify-center items-center h-0 relative bottom-2">
             <DirectionButton
-              disabled={state.isSwapping || isFetchingQuote}
-              onClick={() => {
+              isDisabled={state.isSwapping || isFetchingQuote}
+              onPress={() => {
                 setSellItems(buyItems);
                 setBuyItems(sellItems);
                 dispatch({ type: "reverse trade direction" });
               }}
-              className="border-purple-800 outline-none outline-2 outline-dotted  focus-visible:outline-purple-900"
+              className="disabled:bg-purple-400 disabled:text-purple-600 bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
             />
           </div>
           <div className="bg-slate-300 flex items-center justify-between rounded-2xl px-3 h-28 cursor-not-allowed">
