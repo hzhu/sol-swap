@@ -1,3 +1,5 @@
+import { http, createConfig, WagmiProvider } from "wagmi";
+import { mainnet, polygon } from "wagmi/chains";
 import { useEffect, useState } from "react";
 import { cssBundleHref } from "@remix-run/css-bundle";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -45,6 +47,14 @@ const rpcs = [
   "https://crimson-wider-field.solana-mainnet.quiknode.pro/ae46bf182ab5e4d0d797cfcf1222a368a8cafb47/",
   "https://solana-mainnet.g.alchemy.com/v2/25BADfV1u8vd9ygnc_gIyNUFgV40EJz7",
 ];
+
+export const config = createConfig({
+  chains: [mainnet, polygon],
+  transports: {
+    [mainnet.id]: http(),
+    [polygon.id]: http(),
+  },
+});
 
 export default function App() {
   // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
@@ -106,9 +116,11 @@ export default function App() {
                     />
                   </div>
                 )}
-                <QueryClientProvider client={queryClient}>
-                  <Outlet />
-                </QueryClientProvider>
+                <WagmiProvider config={config}>
+                  <QueryClientProvider client={queryClient}>
+                    <Outlet />
+                  </QueryClientProvider>
+                </WagmiProvider>
               </WalletModalProvider>
             </WalletProvider>
           </ConnectionProvider>

@@ -1,3 +1,4 @@
+import { useAccount, useEnsName } from "wagmi";
 import { useReducer } from "react";
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
@@ -49,6 +50,17 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
+  const { address } = useAccount();
+  const { data } = useEnsName({ address });
+
+  if (address) {
+    console.info(address);
+  }
+
+  if (data) {
+    console.info(data);
+  }
+
   const provider = useProvider();
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
