@@ -36,7 +36,14 @@
 [x] add max button ui
 [x] add max button ui logic
 [x] token search trigger should have all button states
-[-] can connect to phantom wallet on mobile phone
+
+[ ] create useQuote for quote from LiFi
+[ ] get allowance + render approval button if needed
+[ ] approve LiFi for bridging the tx
+[ ] create single direction button for bridging ui
+[ ] add chain icons to ui
+
+[ ] can connect to phantom wallet on mobile phone
 [ ] direction button should have all button states
 [ ] input should have focus state
 [ ] loading skeleton for when receive amount is pending

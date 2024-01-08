@@ -55,24 +55,13 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const { address } = useAccount();
-  const { data } = useEnsName({ address });
-
-  if (address) {
-    console.info(address);
-  }
-
-  if (data) {
-    console.info(data);
-  }
-
   const hasBridgeFeature = useFeature("bridge");
 
   return (
     <main className="sm:max-w-lg mx-auto text-lg mt-10 sm:mt-40">
       <section className="px-2">
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
-        <Tabs>
+        <Tabs defaultSelectedKey="bridge">
           <TabList aria-label="History of Ancient Rome">
             <Tab id="swap" className={hasBridgeFeature ? "mx-4" : "hidden"}>
               Swap 🔁
@@ -94,7 +83,119 @@ export default function Index() {
 }
 
 function Bridge() {
-  return <div>Bridge</div>;
+  const { address } = useAccount();
+  const { data } = useEnsName({ address });
+  const { connected } = useWallet();
+
+  if (address) {
+    console.info(address);
+  }
+
+  if (data) {
+    console.info(data);
+  }
+
+  const requiresApproval = true;
+
+  return (
+    <Form>
+      <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
+        <label
+          htmlFor="sell-input"
+          className="text-base cursor-pointer font-semibold w-2/3"
+        >
+          <div>From Polygon</div>
+          <Input
+            autoFocus
+            name="sell-input"
+            type="text"
+            minLength={1}
+            maxLength={50}
+            id="sell-input"
+            placeholder="0.0"
+            autoCorrect="off"
+            autoComplete="off"
+            spellCheck="false"
+            inputMode="decimal"
+            value=""
+            pattern="^[0-9]*[.,]?[0-9]*$"
+            className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl"
+            onChange={(e) => {}}
+          />
+        </label>
+        <div className="flex items-end ml-3 flex-col justify-center">
+          <BottomSheetTokenSearch onSelect={(token: Token) => {}}>
+            <BottomSheetTrigger className="flex items-center bg-purple-700/90 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
+              <img
+                alt="USDC"
+                src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                className="w-8 h-8 m-0 p-0 rounded-full"
+              />
+              <span className="mx-2">USDC</span>
+              <Chevron />
+            </BottomSheetTrigger>
+          </BottomSheetTokenSearch>
+        </div>
+      </div>
+      <div className="flex justify-center items-center h-0 relative bottom-2">
+        <DirectionButton
+          // isDisabled={state.isSwapping || isFetchingQuote}
+          onPress={() => {}}
+          className="disabled:bg-purple-400 disabled:text-purple-600 bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+        />
+      </div>
+      <div className="bg-slate-300 flex items-center justify-between rounded-2xl px-3 h-28 cursor-not-allowed">
+        <label
+          htmlFor="buy-input"
+          className="text-base cursor-not-allowed font-semibold w-2/3"
+        >
+          <div>To Solana</div>
+          <Input
+            disabled
+            type="text"
+            id="buy-input"
+            name="buy-input"
+            placeholder="0.0"
+            value=""
+            className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
+          />
+        </label>
+        <div className="flex items-end ml-3 flex-col justify-center">
+          <BottomSheetTokenSearch onSelect={(token) => {}}>
+            <BottomSheetTrigger className="flex items-center bg-purple-700 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
+              <img
+                alt="USDC"
+                src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                className="w-8 h-8 m-0 p-0 rounded-full"
+              />
+              <span className="mx-2">USDC</span>
+              <Chevron />
+            </BottomSheetTrigger>
+          </BottomSheetTokenSearch>
+        </div>
+      </div>
+      <div className="hidden text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
+        ⚠️ Error message
+      </div>
+      <div className="my-1">
+        {!connected ? (
+          <Button
+            onPress={() => {}}
+            className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+          >
+            Connect Wallet
+          </Button>
+        ) : (
+          <Button
+            onPress={() => {}}
+            className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+          >
+            {requiresApproval ? "Approve" : "Bridge"}
+          </Button>
+        )}
+      </div>
+    </Form>
+  );
 }
 
 function Swap() {
