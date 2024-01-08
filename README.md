@@ -37,7 +37,8 @@
 [x] add max button ui logic
 [x] token search trigger should have all button states
 
-[ ] create useQuote for quote from LiFi
+[x] create useQuote for quote from LiFi
+[ ] create reducer and plug in values necessary for useQuote
 [ ] get allowance + render approval button if needed
 [ ] approve LiFi for bridging the tx
 [ ] create single direction button for bridging ui

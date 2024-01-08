@@ -1,3 +1,4 @@
+import type { Address, Hash, Hex } from "viem";
 import type {
   PublicKey,
   SendOptions,
@@ -40,6 +41,7 @@ export interface PhantomWallet extends EventEmitter<PhantomWalletEvents> {
   disconnect(): Promise<void>;
 }
 
+// Quote response from Jupiter
 export interface QuoteResponse {
   inputMint: string;
   inAmount: string;
@@ -127,4 +129,193 @@ export interface Balance {
   uiAmountString: string;
   amount: string;
   decimals: number;
+}
+
+// Quote response from LiFi
+export interface QuoteResponseLiFi {
+  type: string;
+  id: string;
+  tool: string;
+  toolDetails: {
+    key: string;
+    name: string;
+    logoURI: string;
+  };
+  action: {
+    fromChainId: number;
+    fromAmount: string;
+    fromAddress: Address;
+    slippage: number;
+    toChainId: number;
+    toAddress: string;
+    fromToken: {
+      address: Address;
+      chainId: number;
+      symbol: string;
+      decimals: number;
+      name: string;
+      coinKey: string;
+      logoURI: string;
+      priceUSD: string;
+    };
+    toToken: {
+      address: string;
+      chainId: number;
+      symbol: string;
+      decimals: number;
+      name: string;
+      coinKey: string;
+      logoURI: string;
+      priceUSD: string;
+    };
+  };
+  estimate: {
+    tool: string;
+    toolData: {};
+    fromAmount: string;
+    fromAmountUSD: string;
+    toAmount: string;
+    toAmountMin: string;
+    approvalAddress: Address;
+    executionDuration: number;
+    feeCosts: [
+      {
+        name: string;
+        description: string;
+        token: {
+          address: Address;
+          chainId: number;
+          symbol: string;
+          decimals: number;
+          name: string;
+          coinKey: string;
+          logoURI: string;
+          priceUSD: string;
+        };
+        amount: string;
+        amountUSD: string;
+        percentage: string;
+        included: true;
+      }
+    ];
+    gasCosts: [
+      {
+        type: string;
+        price: string;
+        estimate: string;
+        limit: string;
+        amount: string;
+        amountUSD: string;
+        token: {
+          address: Address;
+          chainId: number;
+          symbol: string;
+          decimals: number;
+          name: string;
+          coinKey: string;
+          logoURI: string;
+          priceUSD: string;
+        };
+      }
+    ];
+    toAmountUSD: string;
+  };
+  includedSteps: [
+    {
+      id: string;
+      type: string;
+      action: {
+        fromChainId: number;
+        fromAmount: string;
+        fromAddress: Address;
+        slippage: number;
+        toChainId: number;
+        toAddress: string;
+        fromToken: {
+          address: Address;
+          chainId: number;
+          symbol: string;
+          decimals: number;
+          name: string;
+          coinKey: string;
+          logoURI: string;
+          priceUSD: string;
+        };
+        toToken: {
+          address: string;
+          chainId: number;
+          symbol: string;
+          decimals: number;
+          name: string;
+          coinKey: string;
+          logoURI: string;
+          priceUSD: string;
+        };
+      };
+      estimate: {
+        tool: string;
+        fromAmount: string;
+        fromAmountUSD: string;
+        toAmount: string;
+        toAmountMin: string;
+        approvalAddress: Address;
+        executionDuration: number;
+        feeCosts: [
+          {
+            name: string;
+            description: string;
+            token: {
+              address: Address;
+              chainId: number;
+              symbol: string;
+              decimals: number;
+              name: string;
+              coinKey: string;
+              logoURI: string;
+              priceUSD: string;
+            };
+            amount: string;
+            amountUSD: string;
+            percentage: string;
+            included: true;
+          }
+        ];
+        gasCosts: [
+          {
+            type: string;
+            price: string;
+            estimate: string;
+            limit: string;
+            amount: string;
+            amountUSD: string;
+            token: {
+              address: Address;
+              chainId: number;
+              symbol: string;
+              decimals: number;
+              name: string;
+              coinKey: string;
+              logoURI: string;
+              priceUSD: string;
+            };
+          }
+        ];
+      };
+      tool: string;
+      toolDetails: {
+        key: string;
+        name: string;
+        logoURI: string;
+      };
+    }
+  ];
+  transactionRequest: {
+    data: Hash;
+    to: Address;
+    value: Hex;
+    chainId: number;
+    from: Address;
+    gasLimit: Hex;
+    gasPrice: Hex;
+  };
 }

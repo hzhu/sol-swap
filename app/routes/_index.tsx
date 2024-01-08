@@ -36,10 +36,11 @@ import {
 } from "~/hooks";
 import { WSOL } from "~/constants";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
-import type { Token } from "~/types";
+import type { Token, QuoteResponseLiFi } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
 import reactAriaStyles from "~/styles/react-aria.css";
 import solanaWalletStyles from "~/styles/solana-wallet.css";
+import { useQuery } from "@tanstack/react-query";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: tailwindStyles },
@@ -82,6 +83,15 @@ export default function Index() {
   );
 }
 
+const polygonUsdc = {
+  address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
+  decimals: 6,
+  logoURI:
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+  name: "USD Coin",
+  symbol: "USDC",
+};
+
 function Bridge() {
   const { address } = useAccount();
   const { data } = useEnsName({ address });
@@ -96,6 +106,22 @@ function Bridge() {
   }
 
   const requiresApproval = true;
+
+  const fromAddress = "0x8a6BFCae15E729fd1440574108437dEa281A9B3e"; // taker addy on POL
+  const toAddress = "3zSiMfexWoWY8Yjvpd2bofNrUiCfH2S5Q9a7BwqiGUqM"; // taker addy on SOL
+
+  const query = useQuery<QuoteResponseLiFi>({
+    queryKey: [],
+    queryFn: async () => {
+      const response = await fetch(
+        `https://li.quest/v1/quote?fromChain=POL&toChain=1151111081099710&fromToken=${polygonUsdc.address}&toToken=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&fromAddress=${fromAddress}&toAddress=${toAddress}&fromAmount=1000000&slippage=0.01`
+      );
+      return response.json();
+    },
+  });
+
+  console.log(query);
+  console.log(query.data);
 
   return (
     <Form>
