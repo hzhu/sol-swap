@@ -10,6 +10,19 @@ export const getProvider = () => {
   window.open("https://phantom.app/", "_blank");
 };
 
+export const getProviderEthereum = () => {
+  if ("phantom" in window) {
+    const anyWindow: any = window;
+    const provider = anyWindow.phantom?.ethereum;
+
+    if (provider) {
+      return provider;
+    }
+  }
+
+  window.open("https://phantom.app/", "_blank");
+};
+
 export function lamportsToTokenUnits(lamports: number, decimals: number) {
   return lamports / Math.pow(10, decimals);
 }

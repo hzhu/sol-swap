@@ -49,10 +49,10 @@ const rpcs = [
 ];
 
 export const config = createConfig({
-  chains: [mainnet, polygon],
+  chains: [polygon, mainnet],
   transports: {
-    [mainnet.id]: http(),
     [polygon.id]: http(),
+    [mainnet.id]: http(),
   },
 });
 
