@@ -1,7 +1,15 @@
-import { useAccount, useEnsName } from "wagmi";
 import { useReducer } from "react";
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
+import { erc20Abi, formatUnits, parseUnits } from "viem";
+import {
+  useAccount,
+  useEnsName,
+  useReadContract,
+  useSwitchChain,
+  useWriteContract,
+  useSendTransaction,
+} from "wagmi";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
@@ -35,6 +43,7 @@ import {
   useFeature,
 } from "~/hooks";
 import { WSOL } from "~/constants";
+import type { Address } from "viem";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import type { Token, QuoteResponseLiFi } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
@@ -57,9 +66,23 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const hasBridgeFeature = useFeature("bridge");
-
+  const { chain } = useAccount();
+  const { chains, switchChain } = useSwitchChain();
   return (
     <main className="sm:max-w-lg mx-auto text-lg mt-10 sm:mt-40">
+      {hasBridgeFeature && (
+        <>
+          <div>You are connected to: {chain?.name}</div>
+          {chains.map((chain) => (
+            <button
+              key={chain.id}
+              onClick={() => switchChain({ chainId: chain.id })}
+            >
+              {chain.name}
+            </button>
+          ))}
+        </>
+      )}
       <section className="px-2">
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Tabs defaultSelectedKey="bridge">
@@ -86,45 +109,155 @@ export default function Index() {
 const polygonUsdc = {
   address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
   decimals: 6,
+  chainId: 137,
   logoURI:
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
   name: "USD Coin",
   symbol: "USDC",
 };
 
+const solanaUsdc = {
+  address: "So11111111111111111111111111111111111111112",
+  decimals: 9,
+  chainId: "SOL",
+  logoURI:
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+  name: "USD Coin",
+  symbol: "USDC",
+};
+
+export interface Token2 {
+  // TODO: rename
+  address: string;
+  chainId: number | string;
+  decimals: number;
+  name: string;
+  symbol: string;
+  logoURI: string;
+  tags?: string[];
+}
+
+type ActionTypes =
+  | {
+      type: "set input amount";
+      payload: string;
+    }
+  | {
+      type: "set output amount";
+      payload: string;
+    };
+
+export const bridgeReducer = (
+  state: BridgeReducerState,
+  action: ActionTypes
+) => {
+  switch (action.type) {
+    case "set input amount":
+      return {
+        ...state,
+        inputAmount: action.payload,
+      };
+    case "set output amount":
+      return {
+        ...state,
+        outputAmount: action.payload,
+      };
+    default:
+      return state;
+  }
+};
+
+interface BridgeReducerState {
+  sellToken: Token2;
+  buyToken: Token2;
+  inputAmount: string;
+  outputAmount: string;
+  transactionReceipt: string;
+  isApproving: boolean; // might not need this in state; can come directly from react-query
+  isSwapping: boolean; // might not need this in state; can come directly from react-query
+}
+
+const initialStateBridge = {
+  sellToken: polygonUsdc,
+  buyToken: solanaUsdc,
+  inputAmount: "",
+  outputAmount: "",
+  transactionReceipt: "",
+  isApproving: false,
+  isSwapping: false,
+};
+
 function Bridge() {
+  const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
+  const debouncedSellAmount: string = useDebounce(state.inputAmount, 500);
+
+  const fromAmount = parseUnits(
+    debouncedSellAmount,
+    state.sellToken.decimals
+  ).toString();
+
   const { address } = useAccount();
-  const { data } = useEnsName({ address });
+  const { data: ensName } = useEnsName({ address });
   const { connected } = useWallet();
-
-  if (address) {
-    console.info(address);
-  }
-
-  if (data) {
-    console.info(data);
-  }
-
-  const requiresApproval = true;
 
   const fromAddress = "0x8a6BFCae15E729fd1440574108437dEa281A9B3e"; // taker addy on POL
   const toAddress = "3zSiMfexWoWY8Yjvpd2bofNrUiCfH2S5Q9a7BwqiGUqM"; // taker addy on SOL
 
   const query = useQuery<QuoteResponseLiFi>({
-    queryKey: [],
-    queryFn: async () => {
+    queryKey: [fromAmount],
+    enabled: fromAmount !== "0",
+    queryFn: async ({ queryKey }) => {
+      const [fromAmount] = queryKey;
       const response = await fetch(
-        `https://li.quest/v1/quote?fromChain=POL&toChain=1151111081099710&fromToken=${polygonUsdc.address}&toToken=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&fromAddress=${fromAddress}&toAddress=${toAddress}&fromAmount=1000000&slippage=0.01`
+        `https://li.quest/v1/quote?fromChain=POL&toChain=1151111081099710&fromToken=${polygonUsdc.address}&toToken=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&fromAddress=${fromAddress}&toAddress=${toAddress}&fromAmount=${fromAmount}&slippage=0.01`
       );
       return response.json();
     },
   });
 
-  console.log(query);
-  console.log(query.data);
+  const outputAmount = query.data
+    ? formatUnits(
+        BigInt(query.data.estimate.toAmount),
+        state.sellToken.decimals
+      )
+    : "";
+
+  const approvalAddress = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE"; // from LiFi quote
+
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // usdc on polygon
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: [fromAddress, approvalAddress],
+  });
+
+  const { writeContractAsync } = useWriteContract();
+
+  const fromAmountFromQuote = query.data?.estimate.fromAmount;
+
+  const requiresApproval =
+    allowance && fromAmountFromQuote
+      ? allowance < BigInt(fromAmountFromQuote)
+      : false;
+
+  const approve = async () => {
+    if (!fromAmountFromQuote) return;
+
+    await writeContractAsync({
+      abi: erc20Abi,
+      functionName: "approve",
+      address: polygonUsdc.address as Address,
+      args: [approvalAddress, BigInt(fromAmountFromQuote)],
+    });
+
+    refetchAllowance();
+  };
+
+  const { sendTransactionAsync } = useSendTransaction();
 
   return (
     <Form>
+      <span>{ensName}</span>
       <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
         <label
           htmlFor="sell-input"
@@ -143,10 +276,20 @@ function Bridge() {
             autoComplete="off"
             spellCheck="false"
             inputMode="decimal"
-            value=""
+            value={state.inputAmount}
             pattern="^[0-9]*[.,]?[0-9]*$"
             className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl"
-            onChange={(e) => {}}
+            onChange={(e) => {
+              if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
+                dispatch({
+                  type: "set input amount",
+                  payload: e.target.value.trim(),
+                });
+              }
+              if (e.target.value === "") {
+                dispatch({ type: "set output amount", payload: "" });
+              }
+            }}
           />
         </label>
         <div className="flex items-end ml-3 flex-col justify-center">
@@ -182,7 +325,7 @@ function Bridge() {
             id="buy-input"
             name="buy-input"
             placeholder="0.0"
-            value=""
+            value={outputAmount}
             className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
           />
         </label>
@@ -213,7 +356,25 @@ function Bridge() {
           </Button>
         ) : (
           <Button
-            onPress={() => {}}
+            onPress={() => {
+              if (requiresApproval) {
+                approve();
+              } else {
+                if (!query.data) return;
+                const { transactionRequest } = query.data;
+                const { chainId, data, gasPrice, to, value } =
+                  transactionRequest;
+                sendTransactionAsync({
+                  to,
+                  account: fromAddress,
+                  type: "eip1559",
+                  gasPrice: gasPrice,
+                  chainId: chainId,
+                  data: data,
+                  value: value,
+                });
+              }
+            }}
             className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
           >
             {requiresApproval ? "Approve" : "Bridge"}

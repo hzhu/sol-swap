@@ -312,10 +312,10 @@ export interface QuoteResponseLiFi {
   transactionRequest: {
     data: Hash;
     to: Address;
-    value: Hex;
+    value: bigint;
     chainId: number;
     from: Address;
     gasLimit: Hex;
-    gasPrice: Hex;
+    gasPrice: bigint | undefined;
   };
 }
