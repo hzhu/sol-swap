@@ -1,4 +1,4 @@
-import { useReducer } from "react";
+import { useMemo, useReducer } from "react";
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
@@ -187,23 +187,16 @@ const initialStateBridge = {
   isSwapping: false,
 };
 
-function Bridge() {
-  const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
-  const debouncedSellAmount: string = useDebounce(state.inputAmount, 500);
-
-  const fromAmount = parseUnits(
-    debouncedSellAmount,
-    state.sellToken.decimals
-  ).toString();
-
-  const { address } = useAccount();
-  const { data: ensName } = useEnsName({ address });
-  const { connected } = useWallet();
-
-  const fromAddress = "0x8a6BFCae15E729fd1440574108437dEa281A9B3e"; // taker addy on POL
-  const toAddress = "3zSiMfexWoWY8Yjvpd2bofNrUiCfH2S5Q9a7BwqiGUqM"; // taker addy on SOL
-
-  const query = useQuery<QuoteResponseLiFi>({
+function useQuoteBridge({
+  fromAmount,
+  toAddress,
+  fromAddress,
+}: {
+  fromAmount: string;
+  toAddress: string | undefined;
+  fromAddress?: Address;
+}) {
+  return useQuery<QuoteResponseLiFi>({
     queryKey: [fromAmount],
     enabled: fromAmount !== "0",
     queryFn: async ({ queryKey }) => {
@@ -214,12 +207,30 @@ function Bridge() {
       return response.json();
     },
   });
+}
 
-  const outputAmount = query.data
-    ? formatUnits(
-        BigInt(query.data.estimate.toAmount),
-        state.sellToken.decimals
-      )
+function Bridge() {
+  const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
+  const debouncedSellAmount: string = useDebounce(state.inputAmount, 500);
+
+  const fromAmount = parseUnits(
+    debouncedSellAmount,
+    state.sellToken.decimals
+  ).toString();
+
+  const { connected, publicKey } = useWallet();
+  const { address: fromEvmAddress } = useAccount();
+  const toSvmAddress = useMemo(() => publicKey?.toString(), [publicKey]);
+  const { data: ensName } = useEnsName({ address: fromEvmAddress });
+
+  const { data: liFiQuote, isLoading: isFetchingBridgeQuote } = useQuoteBridge({
+    fromAmount,
+    toAddress: toSvmAddress,
+    fromAddress: fromEvmAddress,
+  });
+
+  const outputAmount = liFiQuote
+    ? formatUnits(BigInt(liFiQuote.estimate.toAmount), state.sellToken.decimals)
     : "";
 
   const approvalAddress = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE"; // from LiFi quote
@@ -228,12 +239,12 @@ function Bridge() {
     address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // usdc on polygon
     abi: erc20Abi,
     functionName: "allowance",
-    args: [fromAddress, approvalAddress],
+    args: fromEvmAddress ? [fromEvmAddress, approvalAddress] : undefined,
   });
 
   const { writeContractAsync } = useWriteContract();
 
-  const fromAmountFromQuote = query.data?.estimate.fromAmount;
+  const fromAmountFromQuote = liFiQuote?.estimate.fromAmount;
 
   const requiresApproval =
     allowance && fromAmountFromQuote
@@ -360,13 +371,13 @@ function Bridge() {
               if (requiresApproval) {
                 approve();
               } else {
-                if (!query.data) return;
-                const { transactionRequest } = query.data;
+                if (!liFiQuote) return;
+                const { transactionRequest } = liFiQuote;
                 const { chainId, data, gasPrice, to, value } =
                   transactionRequest;
                 sendTransactionAsync({
                   to,
-                  account: fromAddress,
+                  account: fromEvmAddress,
                   type: "eip1559",
                   gasPrice: gasPrice,
                   chainId: chainId,
@@ -377,7 +388,11 @@ function Bridge() {
             }}
             className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
           >
-            {requiresApproval ? "Approve" : "Bridge"}
+            {isFetchingBridgeQuote
+              ? "Fetching best price…"
+              : requiresApproval
+              ? "Approve"
+              : "Bridge"}
           </Button>
         )}
       </div>

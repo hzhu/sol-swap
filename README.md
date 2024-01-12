@@ -38,9 +38,11 @@
 [x] token search trigger should have all button states
 
 [x] create useQuote for quote from LiFi
-[ ] create reducer and plug in values necessary for useQuote
-[ ] get allowance + render approval button if needed
-[ ] approve LiFi for bridging the tx
+[x] create reducer and plug in values necessary for useQuote
+[x] get allowance + render approval button if needed
+[x] fetching state (I think populating button is prob best approach)
+[x] approve LiFi for bridging the tx
+[-] show insufficient balance (again in button)
 [ ] create single direction button for bridging ui
 [ ] add chain icons to ui
 
