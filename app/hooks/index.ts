@@ -4,3 +4,4 @@ export { useFeature } from "./useFeature";
 export { useDebounce } from "./useDebounce";
 export { useProvider } from "./useProvider";
 export { useTokenBalance } from "./useTokenBalance";
+export { useUsdcEvmBalance } from "./useUsdcEvmBalance";

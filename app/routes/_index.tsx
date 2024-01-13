@@ -37,10 +37,11 @@ import {
 import {
   useQuote,
   useBalance,
+  useFeature,
   useDebounce,
   useProvider,
   useTokenBalance,
-  useFeature,
+  useUsdcEvmBalance,
 } from "~/hooks";
 import { WSOL } from "~/constants";
 import type { Address } from "viem";
@@ -210,6 +211,10 @@ function useQuoteBridge({
 }
 
 function Bridge() {
+  const { address: fromEvmAddress } = useAccount();
+  const { data: usdcEvmBalance, isLoading: isEvmBalanceLoading } =
+    useUsdcEvmBalance({ fromEvmAddress });
+
   const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
   const debouncedSellAmount: string = useDebounce(state.inputAmount, 500);
 
@@ -219,7 +224,6 @@ function Bridge() {
   ).toString();
 
   const { connected, publicKey } = useWallet();
-  const { address: fromEvmAddress } = useAccount();
   const toSvmAddress = useMemo(() => publicKey?.toString(), [publicKey]);
   const { data: ensName } = useEnsName({ address: fromEvmAddress });
 
@@ -315,6 +319,23 @@ function Bridge() {
               <Chevron />
             </BottomSheetTrigger>
           </BottomSheetTokenSearch>
+          <div className="flex items-center mt-2">
+            {connected && !isEvmBalanceLoading ? (
+              <Text className="text-xs block mr-1 text-end text-nowrap">
+                {usdcEvmBalance ? usdcEvmBalance : `Balance: 0`}
+              </Text>
+            ) : null}
+            {true && (
+              <Button
+                className="font-semibold text-xs text-purple-800 hover:bg-purple-800 hover:text-white py-0.5 px-1 rounded-md relative bottom-px left-0.5"
+                onPress={() => {
+                  console.log("hey");
+                }}
+              >
+                max
+              </Button>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex justify-center items-center h-0 relative bottom-2">
@@ -490,7 +511,7 @@ function Swap() {
             </BottomSheetTokenSearch>
             <div className="flex items-center mt-2">
               {connected ? (
-                <Text className="text-xs blockmr-1 text-end text-nowrap">
+                <Text className="text-xs block mr-1 text-end text-nowrap">
                   {balance && balanceUi
                     ? `Balance: ${balanceUi.uiAmountString}`
                     : `Balance: 0`}
