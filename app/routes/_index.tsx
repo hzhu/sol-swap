@@ -188,6 +188,8 @@ const initialStateBridge = {
   isSwapping: false,
 };
 
+// Hardcoded for now to only support USDC via POL -> SOL
+// Doesn't work if wallet isn't connected / no evm EOA
 function useQuoteBridge({
   fromAmount,
   toAddress,
@@ -201,6 +203,10 @@ function useQuoteBridge({
     queryKey: [fromAmount],
     enabled: fromAmount !== "0",
     queryFn: async ({ queryKey }) => {
+      console.log({
+        fromAddress,
+        toAddress,
+      });
       const [fromAmount] = queryKey;
       const response = await fetch(
         `https://li.quest/v1/quote?fromChain=POL&toChain=1151111081099710&fromToken=${polygonUsdc.address}&toToken=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&fromAddress=${fromAddress}&toAddress=${toAddress}&fromAmount=${fromAmount}&slippage=0.01`
@@ -210,12 +216,31 @@ function useQuoteBridge({
   });
 }
 
+function useSufficientBalance(
+  usdcEvmBalance:
+    | {
+        raw: bigint;
+        formatted: string;
+      }
+    | undefined,
+  liFiQuote: QuoteResponseLiFi | undefined
+) {
+  return useMemo(() => {
+    if (usdcEvmBalance && liFiQuote) {
+      return usdcEvmBalance.raw >= BigInt(liFiQuote.estimate.fromAmount);
+    }
+
+    return true;
+  }, [usdcEvmBalance, liFiQuote]);
+}
+
 function Bridge() {
+  const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
+
   const { address: fromEvmAddress } = useAccount();
   const { data: usdcEvmBalance, isLoading: isEvmBalanceLoading } =
     useUsdcEvmBalance({ fromEvmAddress });
 
-  const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
   const debouncedSellAmount: string = useDebounce(state.inputAmount, 500);
 
   const fromAmount = parseUnits(
@@ -233,9 +258,15 @@ function Bridge() {
     fromAddress: fromEvmAddress,
   });
 
-  const outputAmount = liFiQuote
-    ? formatUnits(BigInt(liFiQuote.estimate.toAmount), state.sellToken.decimals)
-    : "";
+  const sufficientUsdcBalance = useSufficientBalance(usdcEvmBalance, liFiQuote);
+
+  const outputAmount =
+    liFiQuote && liFiQuote.estimate
+      ? formatUnits(
+          BigInt(liFiQuote.estimate.toAmount),
+          state.sellToken.decimals
+        )
+      : "";
 
   const approvalAddress = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE"; // from LiFi quote
 
@@ -322,7 +353,7 @@ function Bridge() {
           <div className="flex items-center mt-2">
             {connected && !isEvmBalanceLoading ? (
               <Text className="text-xs block mr-1 text-end text-nowrap">
-                {usdcEvmBalance ? usdcEvmBalance : `Balance: 0`}
+                {usdcEvmBalance ? usdcEvmBalance.formatted : `Balance: 0`}
               </Text>
             ) : null}
             {true && (
@@ -413,6 +444,8 @@ function Bridge() {
               ? "Fetching best price…"
               : requiresApproval
               ? "Approve"
+              : !sufficientUsdcBalance
+              ? "Insufficient balance"
               : "Bridge"}
           </Button>
         )}

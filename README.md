@@ -42,8 +42,8 @@
 [x] get allowance + render approval button if needed
 [x] fetching state (I think populating button is prob best approach)
 [x] approve LiFi for bridging the tx
-[ ] fetch balance of usdc on evm
-[-] show insufficient balance (again in button)
+[x] fetch balance of usdc on evm
+[x] show insufficient balance (again in button)
 [ ] bridge SOL from EVM (they need gas money!)
 [ ] ability to single click "max" button
 [ ] create single direction button for bridging ui
