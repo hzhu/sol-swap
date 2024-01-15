@@ -360,7 +360,12 @@ function Bridge() {
               <Button
                 className="font-semibold text-xs text-purple-800 hover:bg-purple-800 hover:text-white py-0.5 px-1 rounded-md relative bottom-px left-0.5"
                 onPress={() => {
-                  console.log("hey");
+                  if (usdcEvmBalance) {
+                    dispatch({
+                      type: "set input amount",
+                      payload: usdcEvmBalance.formatted,
+                    });
+                  }
                 }}
               >
                 max
