@@ -131,7 +131,7 @@ export interface Balance {
   decimals: number;
 }
 
-// Quote response from LiFi
+// Deprecated—let's just use deBridge Liquidity Network
 export interface QuoteResponseLiFi {
   type: string;
   id: string;
@@ -169,7 +169,7 @@ export interface QuoteResponseLiFi {
       priceUSD: string;
     };
   };
-  estimate: {
+  estimate?: {
     tool: string;
     toolData: {};
     fromAmount: string;

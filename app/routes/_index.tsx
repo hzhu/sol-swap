@@ -188,51 +188,23 @@ const initialStateBridge = {
   isSwapping: false,
 };
 
-// Hardcoded for now to only support USDC via POL -> SOL
-// Doesn't work if wallet isn't connected / no evm EOA
-function useQuoteBridge({
-  fromAmount,
-  toAddress,
-  fromAddress,
-}: {
-  fromAmount: string;
-  toAddress: string | undefined;
-  fromAddress?: Address;
-}) {
-  return useQuery<QuoteResponseLiFi>({
-    queryKey: [fromAmount],
-    enabled: fromAmount !== "0",
-    queryFn: async ({ queryKey }) => {
-      console.log({
-        fromAddress,
-        toAddress,
-      });
-      const [fromAmount] = queryKey;
-      const response = await fetch(
-        `https://li.quest/v1/quote?fromChain=POL&toChain=1151111081099710&fromToken=${polygonUsdc.address}&toToken=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&fromAddress=${fromAddress}&toAddress=${toAddress}&fromAmount=${fromAmount}&slippage=0.01`
-      );
-      return response.json();
-    },
-  });
-}
+// function useSufficientBalance(
+//   usdcEvmBalance:
+//     | {
+//         raw: bigint;
+//         formatted: string;
+//       }
+//     | undefined,
+//   liFiQuote: QuoteResponseLiFi | undefined
+// ) {
+//   return useMemo(() => {
+//     if (usdcEvmBalance && liFiQuote && liFiQuote.estimate) {
+//       return usdcEvmBalance.raw >= BigInt(liFiQuote.estimate.fromAmount);
+//     }
 
-function useSufficientBalance(
-  usdcEvmBalance:
-    | {
-        raw: bigint;
-        formatted: string;
-      }
-    | undefined,
-  liFiQuote: QuoteResponseLiFi | undefined
-) {
-  return useMemo(() => {
-    if (usdcEvmBalance && liFiQuote) {
-      return usdcEvmBalance.raw >= BigInt(liFiQuote.estimate.fromAmount);
-    }
-
-    return true;
-  }, [usdcEvmBalance, liFiQuote]);
-}
+//     return true;
+//   }, [usdcEvmBalance, liFiQuote]);
+// }
 
 function Bridge() {
   const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
@@ -252,23 +224,44 @@ function Bridge() {
   const toSvmAddress = useMemo(() => publicKey?.toString(), [publicKey]);
   const { data: ensName } = useEnsName({ address: fromEvmAddress });
 
-  const { data: liFiQuote, isLoading: isFetchingBridgeQuote } = useQuoteBridge({
-    fromAmount,
-    toAddress: toSvmAddress,
-    fromAddress: fromEvmAddress,
+  const tokenAddresses = {
+    SOL: "11111111111111111111111111111111", // native sol is not SPL, so this represents native sol?
+  };
+
+  const { sendTransactionAsync } = useSendTransaction();
+
+  // TODO: implement me.
+  // https://docs.dln.trade/dln-api/quick-start-guide/getting-a-quote
+  // function useDNLQuote() {}
+
+  const DNL_QUOTE = useQuery({
+    queryKey: ["DLNQuote"],
+    refetchInterval: 30000,
+    enabled: fromAmount !== "0",
+    queryFn: async () => {
+      if (fromAmount !== "0") {
+        const response = await fetch(
+          `https://api.dln.trade/v1.0/dln/order/quote?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=7565164&dstChainTokenOut=${tokenAddresses.SOL}&prependOperatingExpenses=true&affiliateFeePercent=0.1`
+        );
+        return response.json();
+      }
+
+      return Promise.resolve({ data: undefined, isLoading: true });
+    },
   });
 
-  const sufficientUsdcBalance = useSufficientBalance(usdcEvmBalance, liFiQuote);
+  const recommendedSolAmount = useMemo(() => {
+    if (DNL_QUOTE.data) {
+      const solToReceive = lamportsToTokenUnits(
+        DNL_QUOTE.data.estimation.dstChainTokenOut.recommendedAmount,
+        9
+      );
+      return solToReceive;
+    }
+    return "";
+  }, [DNL_QUOTE]);
 
-  const outputAmount =
-    liFiQuote && liFiQuote.estimate
-      ? formatUnits(
-          BigInt(liFiQuote.estimate.toAmount),
-          state.sellToken.decimals
-        )
-      : "";
-
-  const approvalAddress = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE"; // from LiFi quote
+  const approvalAddress = DNL_QUOTE.data?.tx.allowanceTarget || undefined;
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // usdc on polygon
@@ -279,27 +272,60 @@ function Bridge() {
 
   const { writeContractAsync } = useWriteContract();
 
-  const fromAmountFromQuote = liFiQuote?.estimate.fromAmount;
+  const chainIds = { solana: 7565164 };
+
+  // TODO: implement me.
+  // https://docs.dln.trade/dln-api/quick-start-guide/requesting-order-creation-transaction
+  // function useDNLTransaction() {}
+
+  const DNL_TX = useQuery({
+    queryKey: ["DLN transaction", recommendedSolAmount],
+    refetchInterval: 30000,
+    enabled: fromAmount !== "0",
+    queryFn: async (arg) => {
+      if (
+        DNL_QUOTE &&
+        fromAmount !== "0" &&
+        recommendedSolAmount &&
+        toSvmAddress &&
+        fromEvmAddress
+      ) {
+        const recommendedAmount =
+          DNL_QUOTE.data.estimation.dstChainTokenOut.recommendedAmount;
+        const response = await fetch(
+          `https://api.dln.trade/v1.0/dln/order/create-tx?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=${chainIds.solana}&dstChainTokenOut=${tokenAddresses.SOL}&dstChainTokenOutAmount=${recommendedAmount}&dstChainTokenOutRecipient=${toSvmAddress}&srcChainOrderAuthorityAddress=${fromEvmAddress}&dstChainOrderAuthorityAddress=${toSvmAddress}`
+        );
+        return response.json();
+      }
+
+      throw new Error("Data has not yet been fetched.");
+    },
+  });
 
   const requiresApproval =
-    allowance && fromAmountFromQuote
-      ? allowance < BigInt(fromAmountFromQuote)
+    allowance !== undefined && DNL_TX.data
+      ? allowance < BigInt(DNL_TX.data.estimation.srcChainTokenIn.amount)
       : false;
 
   const approve = async () => {
-    if (!fromAmountFromQuote) return;
+    if (!DNL_TX) return;
+
+    if (!DNL_TX.data.estimation.srcChainTokenIn.amount) {
+      throw new Error("no amount");
+    }
 
     await writeContractAsync({
       abi: erc20Abi,
       functionName: "approve",
       address: polygonUsdc.address as Address,
-      args: [approvalAddress, BigInt(fromAmountFromQuote)],
+      args: [
+        approvalAddress,
+        BigInt(DNL_TX.data.estimation.srcChainTokenIn.amount),
+      ],
     });
 
     refetchAllowance();
   };
-
-  const { sendTransactionAsync } = useSendTransaction();
 
   return (
     <Form>
@@ -393,7 +419,7 @@ function Bridge() {
             id="buy-input"
             name="buy-input"
             placeholder="0.0"
-            value={outputAmount}
+            value={recommendedSolAmount}
             className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
           />
         </label>
@@ -428,16 +454,13 @@ function Bridge() {
               if (requiresApproval) {
                 approve();
               } else {
-                if (!liFiQuote) return;
-                const { transactionRequest } = liFiQuote;
-                const { chainId, data, gasPrice, to, value } =
-                  transactionRequest;
+                if (!DNL_TX) return;
+                const { data, to, value } = DNL_TX.data.tx;
                 sendTransactionAsync({
                   to,
                   account: fromEvmAddress,
                   type: "eip1559",
-                  gasPrice: gasPrice,
-                  chainId: chainId,
+                  chainId: 137,
                   data: data,
                   value: value,
                 });
@@ -445,11 +468,11 @@ function Bridge() {
             }}
             className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
           >
-            {isFetchingBridgeQuote
+            {false
               ? "Fetching best price…"
               : requiresApproval
               ? "Approve"
-              : !sufficientUsdcBalance
+              : false
               ? "Insufficient balance"
               : "Bridge"}
           </Button>

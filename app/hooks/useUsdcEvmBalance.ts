@@ -34,7 +34,6 @@ export function useUsdcEvmBalance({
   if (erc20Balance) {
     const [data] = erc20Balance;
     if (data.result) {
-      console.log("data.result", data.result);
       const balance = {
         raw: data.result,
         formatted: formatUnits(data.result, polygonUsdc.decimals),
