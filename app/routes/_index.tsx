@@ -65,6 +65,12 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+const tokenAddresses = {
+  SOL: "11111111111111111111111111111111", // native sol is not SPL, so this represents native sol?
+};
+
+const chainIds = { solana: 7565164 };
+
 export default function Index() {
   const hasBridgeFeature = useFeature("bridge");
   const { chain } = useAccount();
@@ -224,44 +230,22 @@ function Bridge() {
   const toSvmAddress = useMemo(() => publicKey?.toString(), [publicKey]);
   const { data: ensName } = useEnsName({ address: fromEvmAddress });
 
-  const tokenAddresses = {
-    SOL: "11111111111111111111111111111111", // native sol is not SPL, so this represents native sol?
-  };
-
   const { sendTransactionAsync } = useSendTransaction();
 
-  // TODO: implement me.
-  // https://docs.dln.trade/dln-api/quick-start-guide/getting-a-quote
-  // function useDNLQuote() {}
-
-  const DNL_QUOTE = useQuery({
-    queryKey: ["DLNQuote"],
-    refetchInterval: 30000,
-    enabled: fromAmount !== "0",
-    queryFn: async () => {
-      if (fromAmount !== "0") {
-        const response = await fetch(
-          `https://api.dln.trade/v1.0/dln/order/quote?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=7565164&dstChainTokenOut=${tokenAddresses.SOL}&prependOperatingExpenses=true&affiliateFeePercent=0.1`
-        );
-        return response.json();
-      }
-
-      return Promise.resolve({ data: undefined, isLoading: true });
-    },
-  });
+  const bridgeQuote = useBridgeQuote({ fromAmount });
 
   const recommendedSolAmount = useMemo(() => {
-    if (DNL_QUOTE.data) {
+    if (bridgeQuote.data) {
       const solToReceive = lamportsToTokenUnits(
-        DNL_QUOTE.data.estimation.dstChainTokenOut.recommendedAmount,
+        bridgeQuote.data.estimation.dstChainTokenOut.recommendedAmount,
         9
       );
       return solToReceive;
     }
     return "";
-  }, [DNL_QUOTE]);
+  }, [bridgeQuote]);
 
-  const approvalAddress = DNL_QUOTE.data?.tx.allowanceTarget || undefined;
+  const approvalAddress = bridgeQuote.data?.tx.allowanceTarget || undefined;
 
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // usdc on polygon
@@ -272,45 +256,23 @@ function Bridge() {
 
   const { writeContractAsync } = useWriteContract();
 
-  const chainIds = { solana: 7565164 };
-
-  // TODO: implement me.
-  // https://docs.dln.trade/dln-api/quick-start-guide/requesting-order-creation-transaction
-  // function useDNLTransaction() {}
-
-  const DNL_TX = useQuery({
-    queryKey: ["DLN transaction", recommendedSolAmount],
-    refetchInterval: 30000,
-    enabled: fromAmount !== "0",
-    queryFn: async (arg) => {
-      if (
-        DNL_QUOTE &&
-        fromAmount !== "0" &&
-        recommendedSolAmount &&
-        toSvmAddress &&
-        fromEvmAddress
-      ) {
-        const recommendedAmount =
-          DNL_QUOTE.data.estimation.dstChainTokenOut.recommendedAmount;
-        const response = await fetch(
-          `https://api.dln.trade/v1.0/dln/order/create-tx?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=${chainIds.solana}&dstChainTokenOut=${tokenAddresses.SOL}&dstChainTokenOutAmount=${recommendedAmount}&dstChainTokenOutRecipient=${toSvmAddress}&srcChainOrderAuthorityAddress=${fromEvmAddress}&dstChainOrderAuthorityAddress=${toSvmAddress}`
-        );
-        return response.json();
-      }
-
-      throw new Error("Data has not yet been fetched.");
-    },
+  const createdTx = useCreateBridgeTx({
+    fromAmount,
+    bridgeQuote,
+    toSvmAddress,
+    fromEvmAddress,
+    recommendedSolAmount,
   });
 
   const requiresApproval =
-    allowance !== undefined && DNL_TX.data
-      ? allowance < BigInt(DNL_TX.data.estimation.srcChainTokenIn.amount)
+    allowance !== undefined && createdTx.data
+      ? allowance < BigInt(createdTx.data.estimation.srcChainTokenIn.amount)
       : false;
 
   const approve = async () => {
-    if (!DNL_TX) return;
+    if (!createdTx) return;
 
-    if (!DNL_TX.data.estimation.srcChainTokenIn.amount) {
+    if (!createdTx.data.estimation.srcChainTokenIn.amount) {
       throw new Error("no amount");
     }
 
@@ -320,7 +282,7 @@ function Bridge() {
       address: polygonUsdc.address as Address,
       args: [
         approvalAddress,
-        BigInt(DNL_TX.data.estimation.srcChainTokenIn.amount),
+        BigInt(createdTx.data.estimation.srcChainTokenIn.amount),
       ],
     });
 
@@ -454,8 +416,8 @@ function Bridge() {
               if (requiresApproval) {
                 approve();
               } else {
-                if (!DNL_TX) return;
-                const { data, to, value } = DNL_TX.data.tx;
+                if (!createdTx) return;
+                const { data, to, value } = createdTx.data.tx;
                 sendTransactionAsync({
                   to,
                   account: fromEvmAddress,
@@ -765,4 +727,65 @@ function Swap() {
       </Modal>
     </>
   );
+}
+
+// TODO: implement me.
+// https://docs.dln.trade/dln-api/quick-start-guide/getting-a-quote
+function useBridgeQuote({ fromAmount }: { fromAmount: string }) {
+  return useQuery({
+    queryKey: ["DLNQuote"],
+    refetchInterval: 30000,
+    enabled: fromAmount !== "0",
+    queryFn: async () => {
+      if (fromAmount !== "0") {
+        const response = await fetch(
+          `https://api.dln.trade/v1.0/dln/order/quote?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=7565164&dstChainTokenOut=${tokenAddresses.SOL}&prependOperatingExpenses=true&affiliateFeePercent=0.1`
+        );
+        return response.json();
+      }
+
+      return Promise.resolve({ data: undefined, isLoading: true });
+    },
+  });
+}
+
+// TODO: implement me.
+// https://docs.dln.trade/dln-api/quick-start-guide/requesting-order-creation-transaction
+// function useDNLTransaction() {}
+function useCreateBridgeTx({
+  recommendedSolAmount,
+  fromAmount,
+  bridgeQuote,
+  toSvmAddress,
+  fromEvmAddress,
+}: {
+  recommendedSolAmount: number | string;
+  fromAmount: string;
+  bridgeQuote: ReturnType<typeof useBridgeQuote>;
+  toSvmAddress: string | undefined;
+  fromEvmAddress: string | undefined;
+}) {
+  return useQuery({
+    queryKey: ["DLN transaction", recommendedSolAmount],
+    refetchInterval: 30000,
+    enabled: fromAmount !== "0",
+    queryFn: async (arg) => {
+      if (
+        bridgeQuote &&
+        fromAmount !== "0" &&
+        recommendedSolAmount &&
+        toSvmAddress &&
+        fromEvmAddress
+      ) {
+        const recommendedAmount =
+          bridgeQuote.data.estimation.dstChainTokenOut.recommendedAmount;
+        const response = await fetch(
+          `https://api.dln.trade/v1.0/dln/order/create-tx?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=${chainIds.solana}&dstChainTokenOut=${tokenAddresses.SOL}&dstChainTokenOutAmount=${recommendedAmount}&dstChainTokenOutRecipient=${toSvmAddress}&srcChainOrderAuthorityAddress=${fromEvmAddress}&dstChainOrderAuthorityAddress=${toSvmAddress}`
+        );
+        return response.json();
+      }
+
+      throw new Error("Data has not yet been fetched.");
+    },
+  });
 }
