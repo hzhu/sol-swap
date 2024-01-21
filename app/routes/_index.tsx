@@ -1,4 +1,6 @@
-import { useMemo, useReducer } from "react";
+import { injected } from "wagmi/connectors";
+
+import { useEffect, useMemo, useReducer } from "react";
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
@@ -9,6 +11,8 @@ import {
   useSwitchChain,
   useWriteContract,
   useSendTransaction,
+  useWaitForTransactionReceipt,
+  useConnect,
 } from "wagmi";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
@@ -215,7 +219,28 @@ const initialStateBridge = {
 function Bridge() {
   const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
 
-  const { address: fromEvmAddress } = useAccount();
+  const {
+    address: fromEvmAddress,
+    addresses,
+    isConnected,
+    isDisconnected,
+  } = useAccount();
+
+  // console.log(
+  //   { addresses, isConnected, isDisconnected, fromEvmAddress },
+  //   "<--fromEvmAddressx"
+  // );
+  const { connect } = useConnect();
+
+  // kinda hacky, get rid of dis
+  // useEffect(() => {
+  //   if (isDisconnected) {
+  //     console.log("connecting...");
+  //     console.log("connecting...");
+  //     connect({ connector: injected() });
+  //   }
+  // }, [connect, isDisconnected, fromEvmAddress]);
+
   const { data: usdcEvmBalance, isLoading: isEvmBalanceLoading } =
     useUsdcEvmBalance({ fromEvmAddress });
 
@@ -245,16 +270,42 @@ function Bridge() {
     return "";
   }, [bridgeQuote]);
 
-  const approvalAddress = bridgeQuote.data?.tx.allowanceTarget || undefined;
+  const approvalAddress =
+    bridgeQuote.data?.tx.allowanceTarget ||
+    "0xeF4fB24aD0916217251F553c0596F8Edc630EB66";
 
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+  const {
+    data: allowance,
+    refetch: refetchAllowance,
+    isLoading,
+    isPending,
+    error,
+  } = useReadContract({
     address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // usdc on polygon
     abi: erc20Abi,
     functionName: "allowance",
     args: fromEvmAddress ? [fromEvmAddress, approvalAddress] : undefined,
   });
 
-  const { writeContractAsync } = useWriteContract();
+  const {
+    data: txHashForApproval,
+    writeContract,
+    isPending: isApprovalPending,
+    isSuccess: approvalWritten, // not accurate
+  } = useWriteContract();
+
+  const result = useWaitForTransactionReceipt({
+    hash: txHashForApproval,
+  });
+
+  useEffect(() => {
+    if (result.data) {
+      refetchAllowance();
+    }
+  }, [result.data, refetchAllowance]);
+
+  const isApproving =
+    (approvalWritten && result.data === undefined) || isApprovalPending;
 
   const createdTx = useCreateBridgeTx({
     fromAmount,
@@ -264,11 +315,6 @@ function Bridge() {
     recommendedSolAmount,
   });
 
-  const requiresApproval =
-    allowance !== undefined && createdTx.data
-      ? allowance < BigInt(createdTx.data.estimation.srcChainTokenIn.amount)
-      : false;
-
   const approve = async () => {
     if (!createdTx) return;
 
@@ -276,7 +322,7 @@ function Bridge() {
       throw new Error("no amount");
     }
 
-    await writeContractAsync({
+    writeContract({
       abi: erc20Abi,
       functionName: "approve",
       address: polygonUsdc.address as Address,
@@ -285,13 +331,25 @@ function Bridge() {
         BigInt(createdTx.data.estimation.srcChainTokenIn.amount),
       ],
     });
-
-    refetchAllowance();
   };
+
+  let requiresApproval =
+    allowance !== undefined && createdTx.data
+      ? allowance < BigInt(createdTx.data.estimation.srcChainTokenIn.amount)
+      : false;
+
+  console.log({ requiresApproval });
 
   return (
     <Form>
-      <span>{ensName}</span>
+      <span>{allowance?.toString()}</span>
+      <button
+        onClick={() => {
+          refetchAllowance();
+        }}
+      >
+        refetch allowance
+      </button>
       <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
         <label
           htmlFor="sell-input"
@@ -430,8 +488,12 @@ function Bridge() {
             }}
             className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
           >
-            {false
+            {state.inputAmount === ""
+              ? "Enter an amount"
+              : bridgeQuote.isLoading
               ? "Fetching best price…"
+              : isApproving
+              ? "Approving…"
               : requiresApproval
               ? "Approve"
               : false

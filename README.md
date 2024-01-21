@@ -46,6 +46,8 @@
 [x] show insufficient balance (again in button)
 [x] ability to single click "max" button
 [ ] bridge SOL from EVM (they need gas money!)
+[ ] info popover shows :check: approval and spending allowance
+[ ] ability for users to revoke
 [ ] create single direction button for bridging ui
 [ ] add x-chain icons to ui
 [ ] https://thorchain.org/

@@ -3,7 +3,14 @@ import { useReadContracts } from "wagmi";
 
 import type { Address } from "viem";
 
-const polygonUsdc = {
+const polygonUsdc: {
+  address: Address;
+  decimals: number;
+  chainId: number;
+  logoURI: string;
+  name: string;
+  symbol: string;
+} = {
   address: "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359",
   decimals: 6,
   chainId: 137,
@@ -23,10 +30,10 @@ export function useUsdcEvmBalance({
       {
         // this needs to be dynamic depending on chain.
         // if connected to Ethereum, should use USDC on Ethereum
-        address: polygonUsdc.address as Address,
+        address: fromEvmAddress ? polygonUsdc.address : undefined,
         abi: erc20Abi,
         functionName: "balanceOf",
-        args: [fromEvmAddress as Address],
+        args: [fromEvmAddress as any],
       },
     ],
   });
