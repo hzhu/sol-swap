@@ -1,6 +1,4 @@
-import { injected } from "wagmi/connectors";
-
-import { useEffect, useMemo, useReducer } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import Confetti from "react-confetti";
 import { Form } from "@remix-run/react";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
@@ -12,7 +10,6 @@ import {
   useWriteContract,
   useSendTransaction,
   useWaitForTransactionReceipt,
-  useConnect,
 } from "wagmi";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
@@ -50,7 +47,7 @@ import {
 import { WSOL } from "~/constants";
 import type { Address } from "viem";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
-import type { Token, QuoteResponseLiFi } from "~/types";
+import type { Token } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
 import reactAriaStyles from "~/styles/react-aria.css";
 import solanaWalletStyles from "~/styles/solana-wallet.css";
@@ -219,27 +216,7 @@ const initialStateBridge = {
 function Bridge() {
   const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
 
-  const {
-    address: fromEvmAddress,
-    addresses,
-    isConnected,
-    isDisconnected,
-  } = useAccount();
-
-  // console.log(
-  //   { addresses, isConnected, isDisconnected, fromEvmAddress },
-  //   "<--fromEvmAddressx"
-  // );
-  const { connect } = useConnect();
-
-  // kinda hacky, get rid of dis
-  // useEffect(() => {
-  //   if (isDisconnected) {
-  //     console.log("connecting...");
-  //     console.log("connecting...");
-  //     connect({ connector: injected() });
-  //   }
-  // }, [connect, isDisconnected, fromEvmAddress]);
+  const { address: fromEvmAddress } = useAccount();
 
   const { data: usdcEvmBalance, isLoading: isEvmBalanceLoading } =
     useUsdcEvmBalance({ fromEvmAddress });
@@ -253,7 +230,7 @@ function Bridge() {
 
   const { connected, publicKey } = useWallet();
   const toSvmAddress = useMemo(() => publicKey?.toString(), [publicKey]);
-  const { data: ensName } = useEnsName({ address: fromEvmAddress });
+  // const { data: ensName } = useEnsName({ address: fromEvmAddress });
 
   const { sendTransactionAsync } = useSendTransaction();
 
@@ -274,13 +251,7 @@ function Bridge() {
     bridgeQuote.data?.tx.allowanceTarget ||
     "0xeF4fB24aD0916217251F553c0596F8Edc630EB66";
 
-  const {
-    data: allowance,
-    refetch: refetchAllowance,
-    isLoading,
-    isPending,
-    error,
-  } = useReadContract({
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
     address: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359", // usdc on polygon
     abi: erc20Abi,
     functionName: "allowance",
@@ -307,18 +278,21 @@ function Bridge() {
   const isApproving =
     (approvalWritten && result.data === undefined) || isApprovalPending;
 
-  const createdTx = useCreateBridgeTx({
+  const [isOpen, setIsOpen] = useState(false);
+
+  const { data: createdTxData } = useCreateBridgeTx({
     fromAmount,
     bridgeQuote,
     toSvmAddress,
     fromEvmAddress,
     recommendedSolAmount,
+    reviewSwap: isOpen,
   });
 
   const approve = async () => {
-    if (!createdTx) return;
+    if (!createdTxData) return;
 
-    if (!createdTx.data.estimation.srcChainTokenIn.amount) {
+    if (!createdTxData.estimation.srcChainTokenIn.amount) {
       throw new Error("no amount");
     }
 
@@ -328,154 +302,217 @@ function Bridge() {
       address: polygonUsdc.address as Address,
       args: [
         approvalAddress,
-        BigInt(createdTx.data.estimation.srcChainTokenIn.amount),
+        BigInt(createdTxData.estimation.srcChainTokenIn.amount),
       ],
     });
   };
 
   let requiresApproval =
-    allowance !== undefined && createdTx.data
-      ? allowance < BigInt(createdTx.data.estimation.srcChainTokenIn.amount)
+    allowance !== undefined && createdTxData
+      ? allowance < BigInt(createdTxData.estimation.srcChainTokenIn.amount)
       : false;
 
-  console.log({ requiresApproval });
+  const estimation = createdTxData ? createdTxData.estimation : undefined;
 
   return (
-    <Form>
-      <span>{allowance?.toString()}</span>
-      <button
-        onClick={() => {
-          refetchAllowance();
-        }}
-      >
-        refetch allowance
-      </button>
-      <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
-        <label
-          htmlFor="sell-input"
-          className="text-base cursor-pointer font-semibold w-2/3"
+    <>
+      <Form>
+        <span>{allowance?.toString()}</span>
+        <button
+          onClick={() => {
+            refetchAllowance();
+          }}
         >
-          <div>From Polygon</div>
-          <Input
-            autoFocus
-            name="sell-input"
-            type="text"
-            minLength={1}
-            maxLength={50}
-            id="sell-input"
-            placeholder="0.0"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck="false"
-            inputMode="decimal"
-            value={state.inputAmount}
-            pattern="^[0-9]*[.,]?[0-9]*$"
-            className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl"
-            onChange={(e) => {
-              if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
-                dispatch({
-                  type: "set input amount",
-                  payload: e.target.value.trim(),
-                });
-              }
-              if (e.target.value === "") {
-                dispatch({ type: "set output amount", payload: "" });
-              }
-            }}
-          />
-        </label>
-        <div className="flex items-end ml-3 flex-col justify-center">
-          <BottomSheetTokenSearch onSelect={(token: Token) => {}}>
-            <BottomSheetTrigger className="flex items-center bg-purple-700/90 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
-              <img
-                alt="USDC"
-                src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
-                className="w-8 h-8 m-0 p-0 rounded-full"
-              />
-              <span className="mx-2">USDC</span>
-              <Chevron />
-            </BottomSheetTrigger>
-          </BottomSheetTokenSearch>
-          <div className="flex items-center mt-2">
-            {connected && !isEvmBalanceLoading ? (
-              <Text className="text-xs block mr-1 text-end text-nowrap">
-                {usdcEvmBalance ? usdcEvmBalance.formatted : `Balance: 0`}
-              </Text>
-            ) : null}
-            {true && (
-              <Button
-                className="font-semibold text-xs text-purple-800 hover:bg-purple-800 hover:text-white py-0.5 px-1 rounded-md relative bottom-px left-0.5"
-                onPress={() => {
-                  if (usdcEvmBalance) {
-                    dispatch({
-                      type: "set input amount",
-                      payload: usdcEvmBalance.formatted,
-                    });
-                  }
-                }}
-              >
-                max
-              </Button>
-            )}
+          refetch allowance
+        </button>
+        <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
+          <label
+            htmlFor="sell-input"
+            className="text-base cursor-pointer font-semibold w-2/3"
+          >
+            <div>From Polygon</div>
+            <Input
+              autoFocus
+              name="sell-input"
+              type="text"
+              minLength={1}
+              maxLength={50}
+              id="sell-input"
+              placeholder="0.0"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck="false"
+              inputMode="decimal"
+              value={state.inputAmount}
+              pattern="^[0-9]*[.,]?[0-9]*$"
+              className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl"
+              onChange={(e) => {
+                if (/^[0-9]*\.?[0-9]*$/.test(e.target.value)) {
+                  dispatch({
+                    type: "set input amount",
+                    payload: e.target.value.trim(),
+                  });
+                }
+                if (e.target.value === "") {
+                  dispatch({ type: "set output amount", payload: "" });
+                }
+              }}
+            />
+          </label>
+          <div className="flex items-end ml-3 flex-col justify-center">
+            <BottomSheetTokenSearch onSelect={(token: Token) => {}}>
+              <BottomSheetTrigger className="flex items-center bg-purple-700/90 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
+                <img
+                  alt="USDC"
+                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                  className="w-8 h-8 m-0 p-0 rounded-full"
+                />
+                <span className="mx-2">USDC</span>
+                <Chevron />
+              </BottomSheetTrigger>
+            </BottomSheetTokenSearch>
+            <div className="flex items-center mt-2">
+              {connected && !isEvmBalanceLoading ? (
+                <Text className="text-xs block mr-1 text-end text-nowrap">
+                  {usdcEvmBalance ? usdcEvmBalance.formatted : `Balance: 0`}
+                </Text>
+              ) : null}
+              {true && (
+                <Button
+                  className="font-semibold text-xs text-purple-800 hover:bg-purple-800 hover:text-white py-0.5 px-1 rounded-md relative bottom-px left-0.5"
+                  onPress={() => {
+                    if (usdcEvmBalance) {
+                      dispatch({
+                        type: "set input amount",
+                        payload: usdcEvmBalance.formatted,
+                      });
+                    }
+                  }}
+                >
+                  max
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex justify-center items-center h-0 relative bottom-2">
-        <DirectionButton
-          // isDisabled={state.isSwapping || isFetchingQuote}
-          onPress={() => {}}
-          className="disabled:bg-purple-400 disabled:text-purple-600 bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
-        />
-      </div>
-      <div className="bg-slate-300 flex items-center justify-between rounded-2xl px-3 h-28 cursor-not-allowed">
-        <label
-          htmlFor="buy-input"
-          className="text-base cursor-not-allowed font-semibold w-2/3"
-        >
-          <div>To Solana</div>
-          <Input
-            disabled
-            type="text"
-            id="buy-input"
-            name="buy-input"
-            placeholder="0.0"
-            value={recommendedSolAmount}
-            className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
-          />
-        </label>
-        <div className="flex items-end ml-3 flex-col justify-center">
-          <BottomSheetTokenSearch onSelect={(token) => {}}>
-            <BottomSheetTrigger className="flex items-center bg-purple-700 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
-              <img
-                alt="USDC"
-                src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
-                className="w-8 h-8 m-0 p-0 rounded-full"
-              />
-              <span className="mx-2">USDC</span>
-              <Chevron />
-            </BottomSheetTrigger>
-          </BottomSheetTokenSearch>
-        </div>
-      </div>
-      <div className="hidden text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
-        ⚠️ Error message
-      </div>
-      <div className="my-1">
-        {!connected ? (
-          <Button
+        <div className="flex justify-center items-center h-0 relative bottom-2">
+          <DirectionButton
+            // isDisabled={state.isSwapping || isFetchingQuote}
             onPress={() => {}}
-            className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+            className="disabled:bg-purple-400 disabled:text-purple-600 bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+          />
+        </div>
+        <div className="bg-slate-300 flex items-center justify-between rounded-2xl px-3 h-28 cursor-not-allowed">
+          <label
+            htmlFor="buy-input"
+            className="text-base cursor-not-allowed font-semibold w-2/3"
           >
-            Connect Wallet
-          </Button>
-        ) : (
-          <Button
-            onPress={() => {
-              if (requiresApproval) {
-                approve();
-              } else {
-                if (!createdTx) return;
-                const { data, to, value } = createdTx.data.tx;
+            <div>To Solana</div>
+            <Input
+              disabled
+              type="text"
+              id="buy-input"
+              name="buy-input"
+              placeholder="0.0"
+              value={recommendedSolAmount}
+              className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
+            />
+          </label>
+          <div className="flex items-end ml-3 flex-col justify-center">
+            <BottomSheetTokenSearch onSelect={(token) => {}}>
+              <BottomSheetTrigger className="flex items-center bg-purple-700 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
+                <img
+                  alt="USDC"
+                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                  className="w-8 h-8 m-0 p-0 rounded-full"
+                />
+                <span className="mx-2">USDC</span>
+                <Chevron />
+              </BottomSheetTrigger>
+            </BottomSheetTokenSearch>
+          </div>
+        </div>
+        <div className="hidden text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
+          ⚠️ Error message
+        </div>
+        <div className="my-1">
+          {!connected ? (
+            <Button
+              onPress={() => {}}
+              className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+            >
+              Connect Wallet
+            </Button>
+          ) : (
+            <Button
+              onPress={() => {
+                if (requiresApproval) {
+                  approve();
+                } else {
+                  // open review modal
+                  setIsOpen(true);
+                }
+              }}
+              className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+            >
+              {state.inputAmount === ""
+                ? "Enter an amount"
+                : bridgeQuote.isLoading
+                ? "Fetching best price…"
+                : isApproving
+                ? "Approving…"
+                : requiresApproval
+                ? "Approve"
+                : false
+                ? "Insufficient balance"
+                : !requiresApproval
+                ? "Review Bridge"
+                : "Approve"}
+            </Button>
+          )}
+        </div>
+      </Form>
+      <Modal isOpen={isOpen} className="max-w-xl px-2 sm:px-0">
+        <Dialog className="bg-white rounded-md p-8">
+          <Heading slot="title" className="text-2xl text-center">
+            Review transaction
+          </Heading>
+          <div className="mt-8 mb-8">
+            <div>You send on Polygon</div>
+            {estimation ? (
+              <div>
+                {formatUnits(
+                  estimation.srcChainTokenIn.amount,
+                  estimation.srcChainTokenIn.decimals
+                )}
+                &nbsp;
+                {estimation.srcChainTokenIn.symbol}
+              </div>
+            ) : null}
+            <hr />
+            <div>You receive on Solana</div>
+            {estimation ? (
+              <div>
+                {lamportsToTokenUnits(estimation.dstChainTokenOut.amount, 9)}
+                &nbsp;
+                {estimation.dstChainTokenOut.symbol}
+              </div>
+            ) : null}
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onPress={() => {
+                setIsOpen(false);
+              }}
+              className="mr-3 w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center transition-colors duration-250 border-none dark:hover:bg-blue-marguerite-900 dark:pressed:bg-blue-marguerite-700"
+            >
+              <span>Cancel</span>
+            </Button>
+            <Button
+              className="text-white w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center outline-none outline-2 outline-dotted  focus-visible:outline-purple-300 transition-colors duration-250 bg-purple-800 hover:bg-purple-800/95 pressed:bg-purple-950 border-purple-950"
+              onPress={() => {
+                if (!createdTxData) return;
+                const { data, to, value } = createdTxData.tx;
                 sendTransactionAsync({
                   to,
                   account: fromEvmAddress,
@@ -484,25 +521,14 @@ function Bridge() {
                   data: data,
                   value: value,
                 });
-              }
-            }}
-            className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
-          >
-            {state.inputAmount === ""
-              ? "Enter an amount"
-              : bridgeQuote.isLoading
-              ? "Fetching best price…"
-              : isApproving
-              ? "Approving…"
-              : requiresApproval
-              ? "Approve"
-              : false
-              ? "Insufficient balance"
-              : "Bridge"}
-          </Button>
-        )}
-      </div>
-    </Form>
+              }}
+            >
+              Bridge
+            </Button>
+          </div>
+        </Dialog>
+      </Modal>
+    </>
   );
 }
 
@@ -820,24 +846,28 @@ function useCreateBridgeTx({
   bridgeQuote,
   toSvmAddress,
   fromEvmAddress,
+  reviewSwap,
 }: {
   recommendedSolAmount: number | string;
   fromAmount: string;
   bridgeQuote: ReturnType<typeof useBridgeQuote>;
   toSvmAddress: string | undefined;
   fromEvmAddress: string | undefined;
+  reviewSwap: boolean;
 }) {
   return useQuery({
-    queryKey: ["DLN transaction", recommendedSolAmount],
+    queryKey: ["DLN transaction", recommendedSolAmount, reviewSwap],
     refetchInterval: 30000,
     enabled: fromAmount !== "0",
-    queryFn: async (arg) => {
+    queryFn: async ({ queryKey }) => {
+      const { 1: recommendedSolAmount, 2: reviewSwap } = queryKey;
       if (
         bridgeQuote &&
         fromAmount !== "0" &&
         recommendedSolAmount &&
         toSvmAddress &&
-        fromEvmAddress
+        fromEvmAddress &&
+        reviewSwap
       ) {
         const recommendedAmount =
           bridgeQuote.data.estimation.dstChainTokenOut.recommendedAmount;
