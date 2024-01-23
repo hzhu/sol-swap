@@ -290,26 +290,25 @@ function Bridge() {
   });
 
   const approve = async () => {
-    if (!createdTxData) return;
+    if (!bridgeQuote) return;
 
-    if (!createdTxData.estimation.srcChainTokenIn.amount) {
-      throw new Error("no amount");
+    if (!bridgeQuote.data.tx) {
+      return;
     }
+
+    const allowanceValue = BigInt(bridgeQuote.data.tx.allowanceValue);
 
     writeContract({
       abi: erc20Abi,
       functionName: "approve",
       address: polygonUsdc.address as Address,
-      args: [
-        approvalAddress,
-        BigInt(createdTxData.estimation.srcChainTokenIn.amount),
-      ],
+      args: [approvalAddress, allowanceValue],
     });
   };
 
   let requiresApproval =
-    allowance !== undefined && createdTxData
-      ? allowance < BigInt(createdTxData.estimation.srcChainTokenIn.amount)
+    allowance !== undefined && bridgeQuote.data !== undefined
+      ? allowance < BigInt(bridgeQuote.data.tx.allowanceValue)
       : false;
 
   const estimation = createdTxData ? createdTxData.estimation : undefined;
@@ -455,19 +454,19 @@ function Bridge() {
               }}
               className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
             >
-              {state.inputAmount === ""
-                ? "Enter an amount"
-                : bridgeQuote.isLoading
+              {bridgeQuote.isLoading
                 ? "Fetching best price…"
+                : state.inputAmount === "" || bridgeQuote.data === undefined
+                ? "Enter an amount"
                 : isApproving
                 ? "Approving…"
                 : requiresApproval
                 ? "Approve"
                 : false
                 ? "Insufficient balance"
-                : !requiresApproval
-                ? "Review Bridge"
-                : "Approve"}
+                : requiresApproval
+                ? "Approve"
+                : "Review Bridge"}
             </Button>
           )}
         </div>
@@ -488,7 +487,9 @@ function Bridge() {
                 &nbsp;
                 {estimation.srcChainTokenIn.symbol}
               </div>
-            ) : null}
+            ) : (
+              <div>Loading...</div>
+            )}
             <hr />
             <div>You receive on Solana</div>
             {estimation ? (
@@ -497,7 +498,20 @@ function Bridge() {
                 &nbsp;
                 {estimation.dstChainTokenOut.symbol}
               </div>
-            ) : null}
+            ) : (
+              <div>Loading...</div>
+            )}
+          </div>
+          <div>
+            {estimation ? (
+              <>
+                <div>Integrator Fee: $0.00</div>
+                <div>Network Fee: $0.05</div>
+                <div>Rate: 85 USDC = 1 SOL ($85)</div>
+              </>
+            ) : (
+              <div>Loading...</div>
+            )}
           </div>
           <div className="flex justify-end">
             <Button
