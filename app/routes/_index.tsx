@@ -421,11 +421,11 @@ function Bridge() {
             <BottomSheetTokenSearch onSelect={(token) => {}}>
               <BottomSheetTrigger className="flex items-center bg-purple-700 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
                 <img
-                  alt="USDC"
-                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                  alt="Solana"
+                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
                   className="w-8 h-8 m-0 p-0 rounded-full"
                 />
-                <span className="mx-2">USDC</span>
+                <span className="mx-2">SOL</span>
                 <Chevron />
               </BottomSheetTrigger>
             </BottomSheetTokenSearch>
@@ -479,13 +479,22 @@ function Bridge() {
           <div className="mt-8 mb-8">
             <div>You send on Polygon</div>
             {estimation ? (
-              <div>
-                {formatUnits(
-                  estimation.srcChainTokenIn.amount,
-                  estimation.srcChainTokenIn.decimals
-                )}
+              <div className="flex">
+                <span>
+                  {formatUnits(
+                    estimation.srcChainTokenIn.amount,
+                    estimation.srcChainTokenIn.decimals
+                  )}
+                  &nbsp;
+                  {estimation.srcChainTokenIn.symbol}
+                </span>
                 &nbsp;
-                {estimation.srcChainTokenIn.symbol}
+                <img
+                  width={25}
+                  height={25}
+                  alt=""
+                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                />
               </div>
             ) : (
               <div>Loading...</div>
@@ -493,10 +502,19 @@ function Bridge() {
             <hr />
             <div>You receive on Solana</div>
             {estimation ? (
-              <div>
-                {lamportsToTokenUnits(estimation.dstChainTokenOut.amount, 9)}
+              <div className="flex">
+                <span>
+                  {lamportsToTokenUnits(estimation.dstChainTokenOut.amount, 9)}
+                  &nbsp;
+                  {estimation.dstChainTokenOut.symbol}
+                </span>
                 &nbsp;
-                {estimation.dstChainTokenOut.symbol}
+                <img
+                  width={25}
+                  height={25}
+                  alt="Solana logo"
+                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+                />
               </div>
             ) : (
               <div>Loading...</div>
