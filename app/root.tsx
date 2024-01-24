@@ -15,7 +15,11 @@ import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
-import { UnsafeBurnerWalletAdapter } from "@solana/wallet-adapter-wallets";
+
+import {
+  SolflareWalletAdapter,
+  UnsafeBurnerWalletAdapter,
+} from "@solana/wallet-adapter-wallets";
 import {
   WalletModalProvider,
   BaseWalletMultiButton,
@@ -76,6 +80,7 @@ export default function App() {
        * in the npm package `@solana/wallet-adapter-wallets`.
        */
       new UnsafeBurnerWalletAdapter(),
+      new SolflareWalletAdapter(),
     ];
 
     return {

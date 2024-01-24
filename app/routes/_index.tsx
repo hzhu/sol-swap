@@ -4,7 +4,7 @@ import { Form } from "@remix-run/react";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
 import {
   useAccount,
-  useEnsName,
+  // useEnsName,
   useReadContract,
   useSwitchChain,
   useWriteContract,
@@ -77,7 +77,7 @@ export default function Index() {
   const { chain } = useAccount();
   const { chains, switchChain } = useSwitchChain();
   return (
-    <main className="sm:max-w-lg mx-auto text-lg mt-10 sm:mt-40">
+    <main className="sm:max-w-lg mx-auto text-lg mt-2 sm:mt-2">
       {hasBridgeFeature && (
         <>
           <div>You are connected to: {chain?.name}</div>
@@ -95,11 +95,14 @@ export default function Index() {
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Tabs defaultSelectedKey="bridge">
           <TabList aria-label="History of Ancient Rome">
-            <Tab id="swap" className={hasBridgeFeature ? "mx-4" : "hidden"}>
+            <Tab id="swap" className={hasBridgeFeature ? "ml-4" : "hidden"}>
               Swap 🔁
             </Tab>
-            <Tab id="bridge" className={hasBridgeFeature ? "" : "hidden"}>
+            <Tab id="bridge" className={hasBridgeFeature ? "mx-4" : "hidden"}>
               Bridge 🌉
+            </Tab>
+            <Tab id="history" className={hasBridgeFeature ? "" : "hidden"}>
+              History 📜
             </Tab>
           </TabList>
           <TabPanel id="swap">
@@ -238,6 +241,10 @@ function Bridge() {
 
   const recommendedSolAmount = useMemo(() => {
     if (bridgeQuote.data) {
+      if (bridgeQuote.data.estimation === undefined) {
+        console.log(bridgeQuote.data, "<--- bridgeQuote.data");
+        throw new Error("estimation is undefined");
+      }
       const solToReceive = lamportsToTokenUnits(
         bridgeQuote.data.estimation.dstChainTokenOut.recommendedAmount,
         9
@@ -312,6 +319,17 @@ function Bridge() {
       : false;
 
   const estimation = createdTxData ? createdTxData.estimation : undefined;
+
+  const rate = createdTxData ? calculateRate(createdTxData) : undefined;
+
+  if (bridgeQuote.data) {
+    console.log(
+      requiresApproval,
+      "<--- requiresApproval",
+      allowance,
+      BigInt(bridgeQuote.data.tx.allowanceValue)
+    );
+  }
 
   return (
     <>
@@ -434,6 +452,21 @@ function Bridge() {
         <div className="hidden text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
           ⚠️ Error message
         </div>
+        <div className="bg-green-300 my-1  justify-between rounded-2xl p-3">
+          <label htmlFor="recipient-address" className="text-sm">
+            Solana Recipient Address:
+          </label>
+          <input
+            type="text"
+            autoCorrect="off"
+            spellCheck="false"
+            autoComplete="off"
+            autoCapitalize="off"
+            value={fromEvmAddress}
+            id="recipient-address"
+            className="w-full bg-green-200 p-1 rounded-md text-xs"
+          />
+        </div>
         <div className="my-1">
           {!connected ? (
             <Button
@@ -454,33 +487,52 @@ function Bridge() {
               }}
               className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
             >
-              {bridgeQuote.isLoading
-                ? "Fetching best price…"
-                : state.inputAmount === "" || bridgeQuote.data === undefined
-                ? "Enter an amount"
-                : isApproving
-                ? "Approving…"
-                : requiresApproval
-                ? "Approve"
-                : false
-                ? "Insufficient balance"
-                : requiresApproval
-                ? "Approve"
-                : "Review Bridge"}
+              {bridgeQuote.isLoading ? (
+                <span className="flex justify-center">
+                  <Spinner size={1.75} />
+                  <span className="ml-3">Fetching best price…</span>
+                </span>
+              ) : state.inputAmount === "" || bridgeQuote.data === undefined ? (
+                "Enter an amount"
+              ) : isApproving ? (
+                "Approving…"
+              ) : requiresApproval ? (
+                "Approve"
+              ) : false ? (
+                "Insufficient balance"
+              ) : requiresApproval ? (
+                "Approve"
+              ) : (
+                "Review Bridge"
+              )}
             </Button>
           )}
         </div>
       </Form>
-      <Modal isOpen={isOpen} className="max-w-xl px-2 sm:px-0">
+      <Modal isOpen={isOpen} className="px-2 sm:px-0 min-w-[548px]">
         <Dialog className="bg-white rounded-md p-8">
+          <Button
+            onPress={() => setIsOpen(false)}
+            className="inline-block float-right relative bottom-[10px] left-[8px]"
+          >
+            <svg
+              style={{ width: "16px" }}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 384 512"
+            >
+              <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
+            </svg>
+          </Button>
           <Heading slot="title" className="text-2xl text-center">
-            Review transaction
+            Review Transaction
           </Heading>
           <div className="mt-8 mb-8">
-            <div>You send on Polygon</div>
+            <div className="text-slate-600">
+              You send on <span className="font-semibold">Polygon</span>
+            </div>
             {estimation ? (
-              <div className="flex">
-                <span>
+              <div className="flex items-center justify-between">
+                <span className="text-4xl">
                   {formatUnits(
                     estimation.srcChainTokenIn.amount,
                     estimation.srcChainTokenIn.decimals
@@ -490,48 +542,112 @@ function Bridge() {
                 </span>
                 &nbsp;
                 <img
-                  width={25}
-                  height={25}
+                  width={50}
+                  height={50}
                   alt=""
                   src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
                 />
               </div>
             ) : (
-              <div>Loading...</div>
-            )}
-            <hr />
-            <div>You receive on Solana</div>
-            {estimation ? (
-              <div className="flex">
-                <span>
-                  {lamportsToTokenUnits(estimation.dstChainTokenOut.amount, 9)}
-                  &nbsp;
-                  {estimation.dstChainTokenOut.symbol}
-                </span>
+              <div className="flex items-center justify-between">
+                <div role="status" className="animate-pulse">
+                  <div className="h-3 bg-gray-200 rounded-full w-96"></div>
+                </div>
                 &nbsp;
                 <img
-                  width={25}
-                  height={25}
+                  width={50}
+                  height={50}
+                  alt=""
+                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
+                />
+              </div>
+            )}
+            <div className="text-slate-600 mt-3">
+              You receive on <span className="font-semibold">Solana</span>
+            </div>
+            {estimation ? (
+              <div className="flex items-center justify-between">
+                <span className="text-4xl">0.34234 SOL</span>
+                &nbsp;
+                <img
+                  width={50}
+                  height={50}
                   alt="Solana logo"
+                  className="rounded-full"
                   src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
                 />
               </div>
             ) : (
-              <div>Loading...</div>
+              // loading...
+              <div className="flex items-center justify-between">
+                <div role="status" className="animate-pulse">
+                  <div className="h-3 bg-gray-200 rounded-full w-96"></div>
+                </div>
+                &nbsp;
+                <img
+                  width={50}
+                  height={50}
+                  alt="Solana logo"
+                  className="rounded-full"
+                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+                />
+              </div>
             )}
           </div>
           <div>
             {estimation ? (
               <>
-                <div>Integrator Fee: $0.00</div>
-                <div>Network Fee: $0.05</div>
-                <div>Rate: 85 USDC = 1 SOL ($85)</div>
+                <div className="text-sm">
+                  <div className="flex justify-between my-2">
+                    <div className="text-slate-700">Rate</div>
+                    {rate ? <div>{rate.toFixed(2)} USDC = 1 SOL</div> : null}
+                  </div>
+                  <div className="flex justify-between my-2">
+                    <div className="text-slate-700">Network fee</div>
+                    <div>0.5 MATIC (~$0.50)</div>
+                  </div>
+                  <div className="flex justify-between my-2">
+                    <div className="text-slate-700">Integrator fee</div>
+                    <div className="text-green-700 font-semibold">FREE</div>
+                  </div>
+                  <div className="flex justify-between my-2">
+                    <div className="text-slate-700">Recipient</div>
+                    <div className="text-black">
+                      0x8a6BFCae15E729fd1440574108437dEa281A9B3e
+                    </div>
+                  </div>
+                </div>
               </>
             ) : (
-              <div>Loading...</div>
+              <div className="text-sm">
+                <div className="flex justify-between my-2">
+                  <div className="text-slate-700">Rate</div>
+                  <div role="status" className="animate-pulse w-1/2">
+                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
+                  </div>
+                </div>
+                <div className="flex justify-between my-2">
+                  <div className="text-slate-700">Network fee</div>
+                  <div role="status" className="animate-pulse w-1/2">
+                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
+                  </div>
+                </div>
+                <div className="flex justify-between my-2">
+                  <div className="text-slate-700">Integrator fee</div>
+                  <div role="status" className="animate-pulse w-1/2">
+                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
+                  </div>
+                </div>
+                <div className="flex justify-between my-2">
+                  <div className="text-slate-700">Recipient</div>
+                  <div role="status" className="animate-pulse w-1/2">
+                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end mt-8">
             <Button
               onPress={() => {
                 setIsOpen(false);
@@ -541,7 +657,7 @@ function Bridge() {
               <span>Cancel</span>
             </Button>
             <Button
-              className="text-white w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center outline-none outline-2 outline-dotted  focus-visible:outline-purple-300 transition-colors duration-250 bg-purple-800 hover:bg-purple-800/95 pressed:bg-purple-950 border-purple-950"
+              className="text-white w-28 h-10 py-1 px-3 rounded-md border flex items-center justify-center outline-none outline-2 outline-dotted  focus-visible:outline-purple-300 transition-colors duration-250 bg-purple-800 hover:bg-purple-800/95 pressed:bg-purple-950 border-purple-950"
               onPress={() => {
                 if (!createdTxData) return;
                 const { data, to, value } = createdTxData.tx;
@@ -853,7 +969,7 @@ function Swap() {
 // https://docs.dln.trade/dln-api/quick-start-guide/getting-a-quote
 function useBridgeQuote({ fromAmount }: { fromAmount: string }) {
   return useQuery({
-    queryKey: ["DLNQuote"],
+    queryKey: ["DLNQuote", fromAmount],
     refetchInterval: 30000,
     enabled: fromAmount !== "0",
     queryFn: async () => {
@@ -912,4 +1028,25 @@ function useCreateBridgeTx({
       throw new Error("Data has not yet been fetched.");
     },
   });
+}
+
+function calculateRate(responseData: any) {
+  // Assuming responseData is the object containing the response data
+  const usdcAmount = parseInt(
+    responseData.estimation.srcChainTokenIn.amount,
+    10
+  );
+  const solAmount = parseInt(
+    responseData.estimation.dstChainTokenOut.amount,
+    10
+  );
+
+  // Convert to standard units
+  const usdcStandard = usdcAmount / Math.pow(10, 6); // USDC has 6 decimal places
+  const solStandard = solAmount / Math.pow(10, 9); // SOL has 9 decimal places
+
+  // Calculate the rate
+  const rateUsdcPerSol = usdcStandard / solStandard;
+
+  return rateUsdcPerSol;
 }

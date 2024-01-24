@@ -45,7 +45,14 @@
 [x] fetch balance of usdc on evm
 [x] show insufficient balance (again in button)
 [x] ability to single click "max" button
-[ ] bridge SOL from EVM (they need gas money!)
+[x] bridge SOL from EVM (they need gas money!)
+[ ] add pencil / edit icon
+[ ] introduce single accordion or disclosure component
+[ ] style review modal
+[ ] on mobile, use iOS sheet for review modal
+[ ] test our solflare workflow
+[ ] migrate to use metamask snap-solflare
+
 [ ] info popover shows :check: approval and spending allowance
 [ ] ability for users to revoke
 [ ] create single direction button for bridging ui
