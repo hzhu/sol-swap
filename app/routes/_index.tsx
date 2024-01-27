@@ -452,8 +452,8 @@ function Bridge() {
         <div className="hidden text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
           ⚠️ Error message
         </div>
-        <div className="bg-green-300 my-1  justify-between rounded-2xl p-3">
-          <label htmlFor="recipient-address" className="text-sm">
+        <div className="bg-purple-300 my-1 text-sm justify-between rounded-2xl px-3 py-2">
+          <label htmlFor="recipient-address" className="text-xs">
             Solana Recipient Address:
           </label>
           <input
@@ -464,7 +464,7 @@ function Bridge() {
             autoCapitalize="off"
             value={fromEvmAddress}
             id="recipient-address"
-            className="w-full bg-green-200 p-1 rounded-md text-xs"
+            className="w-full bg-purple-200 p-1 mt-1 rounded-md text-xs"
           />
         </div>
         <div className="my-1">
@@ -509,8 +509,13 @@ function Bridge() {
           )}
         </div>
       </Form>
-      <Modal isOpen={isOpen} className="px-2 sm:px-0 min-w-[548px]">
-        <Dialog className="bg-white rounded-md p-8">
+      <Modal
+        isOpen={isOpen}
+        isDismissable
+        onOpenChange={setIsOpen}
+        className="px-2 sm:px-0 min-w-[548px]"
+      >
+        <Dialog className="bg-white rounded-md p-8 outline-none">
           <Button
             onPress={() => setIsOpen(false)}
             className="inline-block float-right relative bottom-[10px] left-[8px]"
@@ -526,7 +531,7 @@ function Bridge() {
           <Heading slot="title" className="text-2xl text-center">
             Review Transaction
           </Heading>
-          <div className="mt-8 mb-8">
+          <div className="my-8">
             <div className="text-slate-600">
               You send on <span className="font-semibold">Polygon</span>
             </div>
@@ -596,28 +601,26 @@ function Bridge() {
           </div>
           <div>
             {estimation ? (
-              <>
-                <div className="text-sm">
-                  <div className="flex justify-between my-2">
-                    <div className="text-slate-700">Rate</div>
-                    {rate ? <div>{rate.toFixed(2)} USDC = 1 SOL</div> : null}
-                  </div>
-                  <div className="flex justify-between my-2">
-                    <div className="text-slate-700">Network fee</div>
-                    <div>0.5 MATIC (~$0.50)</div>
-                  </div>
-                  <div className="flex justify-between my-2">
-                    <div className="text-slate-700">Integrator fee</div>
-                    <div className="text-green-700 font-semibold">FREE</div>
-                  </div>
-                  <div className="flex justify-between my-2">
-                    <div className="text-slate-700">Recipient</div>
-                    <div className="text-black">
-                      0x8a6BFCae15E729fd1440574108437dEa281A9B3e
-                    </div>
+              <div className="text-sm">
+                <div className="flex justify-between my-2">
+                  <div className="text-slate-700">Rate</div>
+                  {rate ? <div>{rate.toFixed(2)} USDC = 1 SOL</div> : null}
+                </div>
+                <div className="flex justify-between my-2">
+                  <div className="text-slate-700">Network fee</div>
+                  <div>0.5 MATIC (~$0.50)</div>
+                </div>
+                <div className="flex justify-between my-2">
+                  <div className="text-slate-700">Integrator fee</div>
+                  <div className="text-green-700 font-semibold">FREE</div>
+                </div>
+                <div className="flex justify-between my-2 flex-col sm:flex-row">
+                  <div className="text-slate-700">Recipient</div>
+                  <div className="text-black">
+                    0x8a6BFCae15E729fd1440574108437dEa281A9B3e
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="text-sm">
                 <div className="flex justify-between my-2">
@@ -1005,7 +1008,7 @@ function useCreateBridgeTx({
 }) {
   return useQuery({
     queryKey: ["DLN transaction", recommendedSolAmount, reviewSwap],
-    refetchInterval: 30000,
+    refetchInterval: 60000,
     enabled: fromAmount !== "0",
     queryFn: async ({ queryKey }) => {
       const { 1: recommendedSolAmount, 2: reviewSwap } = queryKey;
