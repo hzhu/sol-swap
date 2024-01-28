@@ -46,6 +46,8 @@
 [x] show insufficient balance (again in button)
 [x] ability to single click "max" button
 [x] bridge SOL from EVM (they need gas money!)
+[ ] investigate Synapse bridge
+[ ] persist DNL orderIds into history
 [ ] add pencil / edit icon
 [ ] introduce single accordion or disclosure component
 [ ] style review modal

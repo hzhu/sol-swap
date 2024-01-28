@@ -45,7 +45,7 @@ import {
   useUsdcEvmBalance,
 } from "~/hooks";
 import { WSOL } from "~/constants";
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import type { Token } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
@@ -235,9 +235,18 @@ function Bridge() {
   const toSvmAddress = useMemo(() => publicKey?.toString(), [publicKey]);
   // const { data: ensName } = useEnsName({ address: fromEvmAddress });
 
-  const { sendTransactionAsync } = useSendTransaction();
+  const {
+    sendTransactionAsync,
+    data: bridgeTxData,
+    status: bridgeTxStatus,
+  } = useSendTransaction();
 
-  const bridgeQuote = useBridgeQuote({ fromAmount });
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+
+  const bridgeQuote = useBridgeQuote({
+    fromAmount,
+    enabled: !isStatusModalOpen,
+  });
 
   const recommendedSolAmount = useMemo(() => {
     if (bridgeQuote.data) {
@@ -285,15 +294,13 @@ function Bridge() {
   const isApproving =
     (approvalWritten && result.data === undefined) || isApprovalPending;
 
-  const [isOpen, setIsOpen] = useState(false);
-
   const { data: createdTxData } = useCreateBridgeTx({
     fromAmount,
     bridgeQuote,
     toSvmAddress,
     fromEvmAddress,
     recommendedSolAmount,
-    reviewSwap: isOpen,
+    reviewSwap: isStatusModalOpen,
   });
 
   const approve = async () => {
@@ -330,6 +337,8 @@ function Bridge() {
       BigInt(bridgeQuote.data.tx.allowanceValue)
     );
   }
+
+  const { data: orderId } = useTransactionOrderIds({ txHash: bridgeTxData });
 
   return (
     <>
@@ -482,7 +491,7 @@ function Bridge() {
                   approve();
                 } else {
                   // open review modal
-                  setIsOpen(true);
+                  setIsStatusModalOpen(true);
                 }
               }}
               className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
@@ -510,14 +519,14 @@ function Bridge() {
         </div>
       </Form>
       <Modal
-        isOpen={isOpen}
         isDismissable
-        onOpenChange={setIsOpen}
+        isOpen={isStatusModalOpen}
+        onOpenChange={setIsStatusModalOpen}
         className="px-2 sm:px-0 min-w-[548px]"
       >
         <Dialog className="bg-white rounded-md p-8 outline-none">
           <Button
-            onPress={() => setIsOpen(false)}
+            onPress={() => setIsStatusModalOpen(false)}
             className="inline-block float-right relative bottom-[10px] left-[8px]"
           >
             <svg
@@ -652,9 +661,7 @@ function Bridge() {
           </div>
           <div className="flex justify-end mt-8">
             <Button
-              onPress={() => {
-                setIsOpen(false);
-              }}
+              onPress={() => setIsStatusModalOpen(false)}
               className="mr-3 w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center transition-colors duration-250 border-none dark:hover:bg-blue-marguerite-900 dark:pressed:bg-blue-marguerite-700"
             >
               <span>Cancel</span>
@@ -664,22 +671,175 @@ function Bridge() {
               onPress={() => {
                 if (!createdTxData) return;
                 const { data, to, value } = createdTxData.tx;
-                sendTransactionAsync({
-                  to,
-                  account: fromEvmAddress,
-                  type: "eip1559",
-                  chainId: 137,
-                  data: data,
-                  value: value,
-                });
+                sendTransactionAsync(
+                  {
+                    to,
+                    account: fromEvmAddress,
+                    type: "eip1559",
+                    chainId: 137,
+                    data: data,
+                    value: value,
+                  },
+                  {
+                    onSuccess(data, variables, context) {
+                      // open bridge status modal
+                      console.log({ data, variables, context });
+                      setIsStatusModalOpen(false);
+                    },
+                  }
+                );
               }}
             >
-              Bridge
+              {bridgeTxStatus === "pending" ? "Bridging…" : "Bridge"}
             </Button>
           </div>
         </Dialog>
       </Modal>
+      <BridgeStatusModal
+        orderId={orderId}
+        setIsOpen={setIsStatusModalOpen}
+        isOpen={Boolean(bridgeTxData)}
+      />
     </>
+  );
+}
+
+function BridgeStatusModal({
+  isOpen,
+  setIsOpen,
+  orderId,
+}: {
+  isOpen: boolean;
+  setIsOpen: (isOpen: boolean) => void;
+  orderId: Hex | undefined;
+}) {
+  const { data: orderStatusData, error } = useOrderStatus({ orderId });
+
+  console.info(error);
+
+  const txCompleted = orderStatusData
+    ? orderStatusData.state === "ClaimedUnlock" ||
+      orderStatusData.state === "Fulfilled" ||
+      orderStatusData.state === "SentUnlock"
+    : false;
+
+  const giveAmount = orderStatusData
+    ? formatUnits(
+        BigInt(orderStatusData.giveOfferWithMetadata.amount.stringValue),
+        orderStatusData.giveOfferWithMetadata.metadata.decimals
+      )
+    : undefined;
+
+  const takeAmount = orderStatusData
+    ? formatUnits(
+        BigInt(orderStatusData.takeOfferWithMetadata.amount.stringValue),
+        orderStatusData.takeOfferWithMetadata.metadata.decimals
+      )
+    : undefined;
+
+  const createTxHash = orderStatusData
+    ? orderStatusData.createdSrcEventMetadata.transactionHash.stringValue
+    : undefined;
+
+  const fulfillTxHash =
+    orderStatusData && orderStatusData.fulfilledDstEventMetadata // "fulfilledDstEventMetadata" can be null...
+      ? orderStatusData.fulfilledDstEventMetadata.transactionHash.stringValue
+      : undefined;
+
+  return (
+    <Modal
+      isDismissable
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      className="px-2 sm:px-0 min-w-[548px]"
+    >
+      <Dialog className="bg-white rounded-md p-8 outline-none">
+        <Button
+          onPress={() => setIsOpen(false)}
+          className="inline-block float-right relative bottom-[18px] left-[12px]"
+        >
+          <svg
+            style={{ width: "16px" }}
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 384 512"
+          >
+            <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
+          </svg>
+        </Button>
+        {txCompleted && orderStatusData ? (
+          <div>
+            <Confetti />
+            <div className="text-center">
+              <div className="text-2xl sm:text-3xl mb-4">
+                Bridge Transaction Complete
+              </div>
+              <div className="my-3">You have successfully bridged…</div>
+              <section>
+                <div className="text-base flex items-center justify-center">
+                  <img
+                    alt={""}
+                    src={orderStatusData?.giveOfferWithMetadata.logoURI}
+                    className="w-7 h-7 mr-1 p-0 rounded-full"
+                  />
+                  <span>
+                    <span className="font-semibold">
+                      {giveAmount}{" "}
+                      {orderStatusData?.giveOfferWithMetadata.symbol}
+                    </span>{" "}
+                    on Polygon
+                  </span>
+                  <a
+                    href={`https://polygonscan.com/tx/${createTxHash}`}
+                    className="ml-1 text-xs underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    (details)
+                  </a>
+                </div>
+                <div className="text-sm my-1">to</div>
+                <div className="text-base flex items-center justify-center">
+                  <img
+                    alt={""}
+                    src={orderStatusData.takeOfferWithMetadata.logoURI}
+                    className="w-7 h-7 mr-1 p-0 rounded-full"
+                  />
+                  <span>
+                    <span className="font-semibold">
+                      {takeAmount}{" "}
+                      {orderStatusData.takeOfferWithMetadata.symbol}
+                    </span>{" "}
+                    on Solana
+                  </span>
+                  <a
+                    href={`https://explorer.solana.com/tx/${fulfillTxHash}`}
+                    className="ml-1 text-xs underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    (details)
+                  </a>
+                </div>
+              </section>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="flex justify-center">
+              <Spinner size={6} />
+            </div>
+            <div className="text-center">
+              <div className="mt-8 text-lg">Bridge transaction pending…</div>
+              <div className="my-2 text-sm">
+                Your transaction has been sent to the blockchain.
+              </div>
+              {/* "The transaction may be completed in as little as 3 minutes, but it can take up to 30 minutes in some cases." */}
+              {/* {error && <div className="text-red-500">{error.message}</div>} */}
+            </div>
+          </div>
+        )}
+      </Dialog>
+    </Modal>
   );
 }
 
@@ -970,11 +1130,17 @@ function Swap() {
 
 // TODO: implement me.
 // https://docs.dln.trade/dln-api/quick-start-guide/getting-a-quote
-function useBridgeQuote({ fromAmount }: { fromAmount: string }) {
+function useBridgeQuote({
+  fromAmount,
+  enabled,
+}: {
+  fromAmount: string;
+  enabled: boolean;
+}) {
   return useQuery({
     queryKey: ["DLNQuote", fromAmount],
     refetchInterval: 30000,
-    enabled: fromAmount !== "0",
+    enabled: enabled && fromAmount !== "0",
     queryFn: async () => {
       if (fromAmount !== "0") {
         const response = await fetch(
@@ -984,6 +1150,57 @@ function useBridgeQuote({ fromAmount }: { fromAmount: string }) {
       }
 
       return Promise.resolve({ data: undefined, isLoading: true });
+    },
+  });
+}
+
+// https://stats-api.dln.trade/api/Transaction/0x3db3c24d8c9afd9d8282efd95964b15ee4a1c96cf4eaa44b8155f0efec6a15aa/orderIds
+function useTransactionOrderIds({
+  txHash,
+}: {
+  txHash: `0x${string}` | undefined;
+}) {
+  return useQuery({
+    queryKey: ["DLNOrderTransaction", txHash],
+    enabled: Boolean(txHash),
+    refetchInterval: 10000,
+    queryFn: async () => {
+      if (txHash) {
+        const response = await fetch(
+          `https://stats-api.dln.trade/api/Transaction/${txHash}/orderIds`
+        );
+        const { orderIds } = (await response.json()) as any;
+        const [orderId] = orderIds;
+        const { stringValue } = orderId;
+
+        return stringValue;
+      }
+
+      return Promise.resolve(undefined);
+    },
+  });
+}
+
+function useOrderStatus({ orderId }: { orderId: Hex | undefined }) {
+  return useQuery({
+    queryKey: ["DLNOrderStatus", orderId],
+    refetchInterval: 30000,
+    enabled: Boolean(orderId),
+    queryFn: async () => {
+      if (orderId) {
+        console.log(orderId, "<--dependent query");
+        console.log(orderId, "<-much wow");
+        const response = await fetch(
+          `https://stats-api.dln.trade/api/Orders/${orderId}`
+        );
+        const data = (await response.json()) as any;
+
+        if (!response.ok) {
+          throw new Error(data.message);
+        }
+
+        return data;
+      }
     },
   });
 }
