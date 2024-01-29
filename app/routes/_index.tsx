@@ -220,8 +220,8 @@ const initialStateBridge = {
 function Bridge() {
   const [state, dispatch] = useReducer(bridgeReducer, initialStateBridge);
 
+  const { setVisible } = useWalletModal();
   const { address: fromEvmAddress } = useAccount();
-
   const { data: usdcEvmBalance, isLoading: isEvmBalanceLoading } =
     useUsdcEvmBalance({ fromEvmAddress });
 
@@ -472,7 +472,9 @@ function Bridge() {
         <div className="my-1">
           {!connected ? (
             <Button
-              onPress={() => {}}
+              onPress={() => {
+                setVisible(true);
+              }}
               className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
             >
               Connect Wallet
