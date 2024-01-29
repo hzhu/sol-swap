@@ -241,6 +241,7 @@ function Bridge() {
     status: bridgeTxStatus,
   } = useSendTransaction();
 
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
 
   const bridgeQuote = useBridgeQuote({
@@ -300,7 +301,7 @@ function Bridge() {
     toSvmAddress,
     fromEvmAddress,
     recommendedSolAmount,
-    reviewSwap: isStatusModalOpen,
+    reviewSwap: isReviewModalOpen,
   });
 
   const approve = async () => {
@@ -328,15 +329,6 @@ function Bridge() {
   const estimation = createdTxData ? createdTxData.estimation : undefined;
 
   const rate = createdTxData ? calculateRate(createdTxData) : undefined;
-
-  if (bridgeQuote.data) {
-    console.log(
-      requiresApproval,
-      "<--- requiresApproval",
-      allowance,
-      BigInt(bridgeQuote.data.tx.allowanceValue)
-    );
-  }
 
   const { data: orderId } = useTransactionOrderIds({ txHash: bridgeTxData });
 
@@ -491,7 +483,7 @@ function Bridge() {
                   approve();
                 } else {
                   // open review modal
-                  setIsStatusModalOpen(true);
+                  setIsReviewModalOpen(true);
                 }
               }}
               className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
@@ -520,13 +512,13 @@ function Bridge() {
       </Form>
       <Modal
         isDismissable
-        isOpen={isStatusModalOpen}
-        onOpenChange={setIsStatusModalOpen}
+        isOpen={isReviewModalOpen}
+        onOpenChange={setIsReviewModalOpen}
         className="px-2 sm:px-0 min-w-[548px]"
       >
         <Dialog className="bg-white rounded-md p-8 outline-none">
           <Button
-            onPress={() => setIsStatusModalOpen(false)}
+            onPress={() => setIsReviewModalOpen(false)}
             className="inline-block float-right relative bottom-[10px] left-[8px]"
           >
             <svg
@@ -661,7 +653,7 @@ function Bridge() {
           </div>
           <div className="flex justify-end mt-8">
             <Button
-              onPress={() => setIsStatusModalOpen(false)}
+              onPress={() => setIsReviewModalOpen(false)}
               className="mr-3 w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center transition-colors duration-250 border-none dark:hover:bg-blue-marguerite-900 dark:pressed:bg-blue-marguerite-700"
             >
               <span>Cancel</span>
@@ -684,7 +676,8 @@ function Bridge() {
                     onSuccess(data, variables, context) {
                       // open bridge status modal
                       console.log({ data, variables, context });
-                      setIsStatusModalOpen(false);
+                      setIsReviewModalOpen(false);
+                      setIsStatusModalOpen(true);
                     },
                   }
                 );
@@ -697,8 +690,8 @@ function Bridge() {
       </Modal>
       <BridgeStatusModal
         orderId={orderId}
+        isOpen={isStatusModalOpen}
         setIsOpen={setIsStatusModalOpen}
-        isOpen={Boolean(bridgeTxData)}
       />
     </>
   );
