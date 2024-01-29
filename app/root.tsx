@@ -55,8 +55,12 @@ const rpcs = [
 export const config = createConfig({
   chains: [mainnet, polygon],
   transports: {
-    [mainnet.id]: http(),
-    [polygon.id]: http(),
+    [mainnet.id]: http(
+      "https://eth-mainnet.g.alchemy.com/v2/8bRc1YQ14fkTaLkVRNTgt1QhjqMihKfc"
+    ),
+    [polygon.id]: http(
+      "https://polygon-mainnet.g.alchemy.com/v2/PHB7oL2qRDZO_fYywUDy4aVXa4vpUzmY"
+    ),
   },
 });
 

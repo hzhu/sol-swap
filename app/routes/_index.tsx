@@ -94,7 +94,7 @@ export default function Index() {
       <section className="px-2">
         <h1 className="text-center text-4xl mt-6 mb-3">sol swap</h1>
         <Tabs defaultSelectedKey="bridge">
-          <TabList aria-label="History of Ancient Rome">
+          <TabList aria-label="sol swap features">
             <Tab id="swap" className={hasBridgeFeature ? "ml-4" : "hidden"}>
               Swap 🔁
             </Tab>
@@ -111,6 +111,7 @@ export default function Index() {
           <TabPanel id="bridge">
             <Bridge />
           </TabPanel>
+          <TabPanel id="history">Coming soon…</TabPanel>
         </Tabs>
       </section>
     </main>
@@ -659,7 +660,7 @@ function Bridge() {
               <span>Cancel</span>
             </Button>
             <Button
-              className="text-white w-28 h-10 py-1 px-3 rounded-md border flex items-center justify-center outline-none outline-2 outline-dotted  focus-visible:outline-purple-300 transition-colors duration-250 bg-purple-800 hover:bg-purple-800/95 pressed:bg-purple-950 border-purple-950"
+              className="text-white w-32 h-10 py-1 px-3 rounded-md border flex items-center justify-center outline-none outline-2 outline-dotted  focus-visible:outline-purple-300 transition-colors duration-250 bg-purple-800 hover:bg-purple-800/95 pressed:bg-purple-950 border-purple-950"
               onPress={() => {
                 if (!createdTxData) return;
                 const { data, to, value } = createdTxData.tx;
@@ -683,7 +684,14 @@ function Bridge() {
                 );
               }}
             >
-              {bridgeTxStatus === "pending" ? "Bridging…" : "Bridge"}
+              {bridgeTxStatus === "pending" ? (
+                <span className="flex items-center">
+                  <Spinner size={1.2} />
+                  <span className="ml-1">Bridging…</span>
+                </span>
+              ) : (
+                "Bridge"
+              )}
             </Button>
           </div>
         </Dialog>
