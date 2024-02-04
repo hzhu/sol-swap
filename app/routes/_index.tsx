@@ -44,6 +44,9 @@ import {
   useProvider,
   useTokenBalance,
   useUsdcEvmBalance,
+  useBridgeQuote,
+  useCreateBridgeTx,
+  useTransactionOrderIds,
 } from "~/hooks";
 import { WSOL } from "~/constants";
 import type { Address } from "viem";
@@ -52,7 +55,6 @@ import type { Token } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
 import reactAriaStyles from "~/styles/react-aria.css";
 import solanaWalletStyles from "~/styles/solana-wallet.css";
-import { useQuery } from "@tanstack/react-query";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: tailwindStyles },
@@ -66,12 +68,6 @@ export const meta: MetaFunction = () => {
     { name: "description", content: "Swap tokens on Solana!" },
   ];
 };
-
-const tokenAddresses = {
-  SOL: "11111111111111111111111111111111", // native sol is not SPL, so this represents native sol?
-};
-
-const chainIds = { solana: 7565164 };
 
 export default function Index() {
   const hasBridgeFeature = useFeature("bridge");
@@ -797,100 +793,4 @@ function Swap() {
       </Modal>
     </>
   );
-}
-
-// TODO: implement me.
-// https://docs.dln.trade/dln-api/quick-start-guide/getting-a-quote
-function useBridgeQuote({
-  fromAmount,
-  enabled,
-}: {
-  fromAmount: string;
-  enabled: boolean;
-}) {
-  return useQuery({
-    queryKey: ["DLNQuote", fromAmount],
-    refetchInterval: 30000,
-    enabled: enabled && fromAmount !== "0",
-    queryFn: async () => {
-      if (fromAmount !== "0") {
-        const response = await fetch(
-          `https://api.dln.trade/v1.0/dln/order/quote?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=7565164&dstChainTokenOut=${tokenAddresses.SOL}&prependOperatingExpenses=true&affiliateFeePercent=0.1`
-        );
-        return response.json();
-      }
-
-      return Promise.resolve({ data: undefined, isLoading: true });
-    },
-  });
-}
-
-// https://stats-api.dln.trade/api/Transaction/0x3db3c24d8c9afd9d8282efd95964b15ee4a1c96cf4eaa44b8155f0efec6a15aa/orderIds
-function useTransactionOrderIds({
-  txHash,
-}: {
-  txHash: `0x${string}` | undefined;
-}) {
-  return useQuery({
-    queryKey: ["DLNOrderTransaction", txHash],
-    enabled: Boolean(txHash),
-    refetchInterval: 10000,
-    queryFn: async () => {
-      if (txHash) {
-        const response = await fetch(
-          `https://stats-api.dln.trade/api/Transaction/${txHash}/orderIds`
-        );
-        const { orderIds } = (await response.json()) as any;
-        const [orderId] = orderIds;
-        const { stringValue } = orderId;
-
-        return stringValue;
-      }
-
-      return Promise.resolve(undefined);
-    },
-  });
-}
-
-// https://docs.dln.trade/dln-api/quick-start-guide/requesting-order-creation-transaction
-function useCreateBridgeTx({
-  recommendedSolAmount,
-  fromAmount,
-  bridgeQuote,
-  toSvmAddress,
-  fromEvmAddress,
-  reviewSwap,
-}: {
-  recommendedSolAmount: number | string;
-  fromAmount: string;
-  bridgeQuote: ReturnType<typeof useBridgeQuote>;
-  toSvmAddress: string | undefined;
-  fromEvmAddress: string | undefined;
-  reviewSwap: boolean;
-}) {
-  return useQuery({
-    queryKey: ["DLN transaction", recommendedSolAmount, reviewSwap],
-    refetchInterval: 60000,
-    enabled: fromAmount !== "0",
-    queryFn: async ({ queryKey }) => {
-      const { 1: recommendedSolAmount, 2: reviewSwap } = queryKey;
-      if (
-        bridgeQuote &&
-        fromAmount !== "0" &&
-        recommendedSolAmount &&
-        toSvmAddress &&
-        fromEvmAddress &&
-        reviewSwap
-      ) {
-        const recommendedAmount =
-          bridgeQuote.data.estimation.dstChainTokenOut.recommendedAmount;
-        const response = await fetch(
-          `https://api.dln.trade/v1.0/dln/order/create-tx?srcChainId=137&srcChainTokenIn=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359&srcChainTokenInAmount=${fromAmount}&dstChainId=${chainIds.solana}&dstChainTokenOut=${tokenAddresses.SOL}&dstChainTokenOutAmount=${recommendedAmount}&dstChainTokenOutRecipient=${toSvmAddress}&srcChainOrderAuthorityAddress=${fromEvmAddress}&dstChainOrderAuthorityAddress=${toSvmAddress}`
-        );
-        return response.json();
-      }
-
-      throw new Error("Data has not yet been fetched.");
-    },
-  });
 }

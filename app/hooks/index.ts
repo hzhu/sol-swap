@@ -5,3 +5,6 @@ export { useDebounce } from "./useDebounce";
 export { useProvider } from "./useProvider";
 export { useTokenBalance } from "./useTokenBalance";
 export { useUsdcEvmBalance } from "./useUsdcEvmBalance";
+export { useBridgeQuote } from "./deSwap/useBridgeQuote";
+export { useCreateBridgeTx } from "./deSwap/useCreateBridgeTx";
+export { useTransactionOrderIds } from "./deSwap/useTransactionOrderIds";
