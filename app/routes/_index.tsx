@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
 import Confetti from "react-confetti";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { Form } from "@remix-run/react";
-import { erc20Abi, formatUnits, parseUnits } from "viem";
+import { erc20Abi, parseUnits } from "viem";
 import {
   useAccount,
   // useEnsName,
   useReadContract,
   useSwitchChain,
   useWriteContract,
-  useSendTransaction,
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { VersionedTransaction } from "@solana/web3.js";
@@ -34,6 +33,8 @@ import {
   BottomSheetTrigger,
   DirectionButton,
   Chevron,
+  BridgeReviewModal,
+  BridgeStatusModal,
 } from "~/components";
 import {
   useQuote,
@@ -45,7 +46,7 @@ import {
   useUsdcEvmBalance,
 } from "~/hooks";
 import { WSOL } from "~/constants";
-import type { Address, Hex } from "viem";
+import type { Address } from "viem";
 import type { MetaFunction, LinksFunction } from "@remix-run/node";
 import type { Token } from "~/types";
 import tailwindStyles from "~/styles/tailwind.css";
@@ -236,24 +237,17 @@ function Bridge() {
   const toSvmAddress = useMemo(() => publicKey?.toString(), [publicKey]);
   // const { data: ensName } = useEnsName({ address: fromEvmAddress });
 
-  const {
-    sendTransactionAsync,
-    data: bridgeTxData,
-    status: bridgeTxStatus,
-  } = useSendTransaction();
-
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
 
   const bridgeQuote = useBridgeQuote({
     fromAmount,
-    enabled: !isStatusModalOpen,
+    enabled: !isStatusOpen,
   });
 
   const recommendedSolAmount = useMemo(() => {
     if (bridgeQuote.data) {
       if (bridgeQuote.data.estimation === undefined) {
-        console.log(bridgeQuote.data, "<--- bridgeQuote.data");
         throw new Error("estimation is undefined");
       }
       const solToReceive = lamportsToTokenUnits(
@@ -302,7 +296,7 @@ function Bridge() {
     toSvmAddress,
     fromEvmAddress,
     recommendedSolAmount,
-    reviewSwap: isReviewModalOpen,
+    reviewSwap: isReviewOpen,
   });
 
   const approve = async () => {
@@ -327,23 +321,15 @@ function Bridge() {
       ? allowance < BigInt(bridgeQuote.data.tx.allowanceValue)
       : false;
 
-  const estimation = createdTxData ? createdTxData.estimation : undefined;
-
-  const rate = createdTxData ? calculateRate(createdTxData) : undefined;
+  const [bridgeTxData, setBridgeTxData] = useState<Address | undefined>(
+    undefined
+  );
 
   const { data: orderId } = useTransactionOrderIds({ txHash: bridgeTxData });
 
   return (
     <>
       <Form>
-        <span>{allowance?.toString()}</span>
-        <button
-          onClick={() => {
-            refetchAllowance();
-          }}
-        >
-          refetch allowance
-        </button>
         <div className="bg-purple-300 flex items-center justify-between rounded-2xl px-3 h-28 mb-1">
           <label
             htmlFor="sell-input"
@@ -351,7 +337,6 @@ function Bridge() {
           >
             <div>From Polygon</div>
             <Input
-              autoFocus
               name="sell-input"
               type="text"
               minLength={1}
@@ -486,7 +471,7 @@ function Bridge() {
                   approve();
                 } else {
                   // open review modal
-                  setIsReviewModalOpen(true);
+                  setIsReviewOpen(true);
                 }
               }}
               className="outline-2 outline-dotted text-lg rounded-lg text-slate-50 transition-all duration-200  disabled:text-slate-100 disabled:opacity-50 py-3 w-full bg-purple-700 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
@@ -513,336 +498,20 @@ function Bridge() {
           )}
         </div>
       </Form>
-      <Modal
-        isDismissable
-        isOpen={isReviewModalOpen}
-        onOpenChange={setIsReviewModalOpen}
-        className="px-2 sm:px-0 min-w-[548px]"
-      >
-        <Dialog className="bg-white rounded-md p-8 outline-none">
-          <Button
-            onPress={() => setIsReviewModalOpen(false)}
-            className="inline-block float-right relative bottom-[10px] left-[8px]"
-          >
-            <svg
-              style={{ width: "16px" }}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 384 512"
-            >
-              <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
-            </svg>
-          </Button>
-          <Heading slot="title" className="text-2xl text-center">
-            Review Transaction
-          </Heading>
-          <div className="my-8">
-            <div className="text-slate-600">
-              You send on <span className="font-semibold">Polygon</span>
-            </div>
-            {estimation ? (
-              <div className="flex items-center justify-between">
-                <span className="text-4xl">
-                  {formatUnits(
-                    estimation.srcChainTokenIn.amount,
-                    estimation.srcChainTokenIn.decimals
-                  )}
-                  &nbsp;
-                  {estimation.srcChainTokenIn.symbol}
-                </span>
-                &nbsp;
-                <img
-                  width={50}
-                  height={50}
-                  alt=""
-                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
-                />
-              </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <div role="status" className="animate-pulse">
-                  <div className="h-3 bg-gray-200 rounded-full w-96"></div>
-                </div>
-                &nbsp;
-                <img
-                  width={50}
-                  height={50}
-                  alt=""
-                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
-                />
-              </div>
-            )}
-            <div className="text-slate-600 mt-3">
-              You receive on <span className="font-semibold">Solana</span>
-            </div>
-            {estimation ? (
-              <div className="flex items-center justify-between">
-                <span className="text-4xl">0.34234 SOL</span>
-                &nbsp;
-                <img
-                  width={50}
-                  height={50}
-                  alt="Solana logo"
-                  className="rounded-full"
-                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-                />
-              </div>
-            ) : (
-              // loading...
-              <div className="flex items-center justify-between">
-                <div role="status" className="animate-pulse">
-                  <div className="h-3 bg-gray-200 rounded-full w-96"></div>
-                </div>
-                &nbsp;
-                <img
-                  width={50}
-                  height={50}
-                  alt="Solana logo"
-                  className="rounded-full"
-                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-                />
-              </div>
-            )}
-          </div>
-          <div>
-            {estimation ? (
-              <div className="text-sm">
-                <div className="flex justify-between my-2">
-                  <div className="text-slate-700">Rate</div>
-                  {rate ? <div>{rate.toFixed(2)} USDC = 1 SOL</div> : null}
-                </div>
-                <div className="flex justify-between my-2">
-                  <div className="text-slate-700">Network fee</div>
-                  <div>0.5 MATIC (~$0.50)</div>
-                </div>
-                <div className="flex justify-between my-2">
-                  <div className="text-slate-700">Integrator fee</div>
-                  <div className="text-green-700 font-semibold">FREE</div>
-                </div>
-                <div className="flex justify-between my-2 flex-col sm:flex-row">
-                  <div className="text-slate-700">Recipient</div>
-                  <div className="text-black">
-                    0x8a6BFCae15E729fd1440574108437dEa281A9B3e
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm">
-                <div className="flex justify-between my-2">
-                  <div className="text-slate-700">Rate</div>
-                  <div role="status" className="animate-pulse w-1/2">
-                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
-                  </div>
-                </div>
-                <div className="flex justify-between my-2">
-                  <div className="text-slate-700">Network fee</div>
-                  <div role="status" className="animate-pulse w-1/2">
-                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
-                  </div>
-                </div>
-                <div className="flex justify-between my-2">
-                  <div className="text-slate-700">Integrator fee</div>
-                  <div role="status" className="animate-pulse w-1/2">
-                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
-                  </div>
-                </div>
-                <div className="flex justify-between my-2">
-                  <div className="text-slate-700">Recipient</div>
-                  <div role="status" className="animate-pulse w-1/2">
-                    <div className="h-2 bg-gray-200 rounded-full w-full"></div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="flex justify-end mt-8">
-            <Button
-              onPress={() => setIsReviewModalOpen(false)}
-              className="mr-3 w-18 h-10 py-1 px-3 rounded-md border flex items-center justify-center transition-colors duration-250 border-none dark:hover:bg-blue-marguerite-900 dark:pressed:bg-blue-marguerite-700"
-            >
-              <span>Cancel</span>
-            </Button>
-            <Button
-              className="text-white w-32 h-10 py-1 px-3 rounded-md border flex items-center justify-center outline-none outline-2 outline-dotted  focus-visible:outline-purple-300 transition-colors duration-250 bg-purple-800 hover:bg-purple-800/95 pressed:bg-purple-950 border-purple-950"
-              onPress={() => {
-                if (!createdTxData) return;
-                const { data, to, value } = createdTxData.tx;
-                sendTransactionAsync(
-                  {
-                    to,
-                    account: fromEvmAddress,
-                    type: "eip1559",
-                    chainId: 137,
-                    data: data,
-                    value: value,
-                  },
-                  {
-                    onSuccess(data, variables, context) {
-                      // open bridge status modal
-                      console.log({ data, variables, context });
-                      setIsReviewModalOpen(false);
-                      setIsStatusModalOpen(true);
-                    },
-                  }
-                );
-              }}
-            >
-              {bridgeTxStatus === "pending" ? (
-                <span className="flex items-center">
-                  <Spinner size={1.2} />
-                  <span className="ml-1">Bridging…</span>
-                </span>
-              ) : (
-                "Bridge"
-              )}
-            </Button>
-          </div>
-        </Dialog>
-      </Modal>
+
+      <BridgeReviewModal
+        isOpen={isReviewOpen}
+        createdTxData={createdTxData}
+        setIsReviewOpen={setIsReviewOpen}
+        setIsStatusOpen={setIsStatusOpen}
+        onSubmitted={setBridgeTxData}
+      />
       <BridgeStatusModal
         orderId={orderId}
-        isOpen={isStatusModalOpen}
-        setIsOpen={setIsStatusModalOpen}
+        isOpen={isStatusOpen}
+        setIsOpen={setIsStatusOpen}
       />
     </>
-  );
-}
-
-function BridgeStatusModal({
-  isOpen,
-  setIsOpen,
-  orderId,
-}: {
-  isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  orderId: Hex | undefined;
-}) {
-  const { data: orderStatusData, error } = useOrderStatus({ orderId });
-
-  console.info(error);
-
-  const txCompleted = orderStatusData
-    ? orderStatusData.state === "ClaimedUnlock" ||
-      orderStatusData.state === "Fulfilled" ||
-      orderStatusData.state === "SentUnlock"
-    : false;
-
-  const giveAmount = orderStatusData
-    ? formatUnits(
-        BigInt(orderStatusData.giveOfferWithMetadata.amount.stringValue),
-        orderStatusData.giveOfferWithMetadata.metadata.decimals
-      )
-    : undefined;
-
-  const takeAmount = orderStatusData
-    ? formatUnits(
-        BigInt(orderStatusData.takeOfferWithMetadata.amount.stringValue),
-        orderStatusData.takeOfferWithMetadata.metadata.decimals
-      )
-    : undefined;
-
-  const createTxHash = orderStatusData
-    ? orderStatusData.createdSrcEventMetadata.transactionHash.stringValue
-    : undefined;
-
-  const fulfillTxHash =
-    orderStatusData && orderStatusData.fulfilledDstEventMetadata // "fulfilledDstEventMetadata" can be null...
-      ? orderStatusData.fulfilledDstEventMetadata.transactionHash.stringValue
-      : undefined;
-
-  return (
-    <Modal
-      isDismissable
-      isOpen={isOpen}
-      onOpenChange={setIsOpen}
-      className="px-2 sm:px-0 min-w-[548px]"
-    >
-      <Dialog className="bg-white rounded-md p-8 outline-none">
-        <Button
-          onPress={() => setIsOpen(false)}
-          className="inline-block float-right relative bottom-[18px] left-[12px]"
-        >
-          <svg
-            style={{ width: "16px" }}
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 384 512"
-          >
-            <path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z" />
-          </svg>
-        </Button>
-        {txCompleted && orderStatusData ? (
-          <div>
-            <Confetti />
-            <div className="text-center">
-              <div className="text-2xl sm:text-3xl mb-4">
-                Bridge Transaction Complete
-              </div>
-              <div className="my-3">You have successfully bridged…</div>
-              <section>
-                <div className="text-base flex items-center justify-center">
-                  <img
-                    alt={""}
-                    src={orderStatusData?.giveOfferWithMetadata.logoURI}
-                    className="w-7 h-7 mr-1 p-0 rounded-full"
-                  />
-                  <span>
-                    <span className="font-semibold">
-                      {giveAmount}{" "}
-                      {orderStatusData?.giveOfferWithMetadata.symbol}
-                    </span>{" "}
-                    on Polygon
-                  </span>
-                  <a
-                    href={`https://polygonscan.com/tx/${createTxHash}`}
-                    className="ml-1 text-xs underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    (details)
-                  </a>
-                </div>
-                <div className="text-sm my-1">to</div>
-                <div className="text-base flex items-center justify-center">
-                  <img
-                    alt={""}
-                    src={orderStatusData.takeOfferWithMetadata.logoURI}
-                    className="w-7 h-7 mr-1 p-0 rounded-full"
-                  />
-                  <span>
-                    <span className="font-semibold">
-                      {takeAmount}{" "}
-                      {orderStatusData.takeOfferWithMetadata.symbol}
-                    </span>{" "}
-                    on Solana
-                  </span>
-                  <a
-                    href={`https://explorer.solana.com/tx/${fulfillTxHash}`}
-                    className="ml-1 text-xs underline"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    (details)
-                  </a>
-                </div>
-              </section>
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div className="flex justify-center">
-              <Spinner size={6} />
-            </div>
-            <div className="text-center">
-              <div className="mt-8 text-lg">Bridge transaction pending…</div>
-              <div className="my-2 text-sm">
-                Your transaction has been sent to the blockchain.
-              </div>
-              {/* "The transaction may be completed in as little as 3 minutes, but it can take up to 30 minutes in some cases." */}
-              {/* {error && <div className="text-red-500">{error.message}</div>} */}
-            </div>
-          </div>
-        )}
-      </Dialog>
-    </Modal>
   );
 }
 
@@ -891,7 +560,6 @@ function Swap() {
           >
             <div>Sell</div>
             <Input
-              autoFocus
               name="sell-input"
               type="text"
               minLength={1}
@@ -1184,33 +852,7 @@ function useTransactionOrderIds({
   });
 }
 
-function useOrderStatus({ orderId }: { orderId: Hex | undefined }) {
-  return useQuery({
-    queryKey: ["DLNOrderStatus", orderId],
-    refetchInterval: 30000,
-    enabled: Boolean(orderId),
-    queryFn: async () => {
-      if (orderId) {
-        console.log(orderId, "<--dependent query");
-        console.log(orderId, "<-much wow");
-        const response = await fetch(
-          `https://stats-api.dln.trade/api/Orders/${orderId}`
-        );
-        const data = (await response.json()) as any;
-
-        if (!response.ok) {
-          throw new Error(data.message);
-        }
-
-        return data;
-      }
-    },
-  });
-}
-
-// TODO: implement me.
 // https://docs.dln.trade/dln-api/quick-start-guide/requesting-order-creation-transaction
-// function useDNLTransaction() {}
 function useCreateBridgeTx({
   recommendedSolAmount,
   fromAmount,
@@ -1251,25 +893,4 @@ function useCreateBridgeTx({
       throw new Error("Data has not yet been fetched.");
     },
   });
-}
-
-function calculateRate(responseData: any) {
-  // Assuming responseData is the object containing the response data
-  const usdcAmount = parseInt(
-    responseData.estimation.srcChainTokenIn.amount,
-    10
-  );
-  const solAmount = parseInt(
-    responseData.estimation.dstChainTokenOut.amount,
-    10
-  );
-
-  // Convert to standard units
-  const usdcStandard = usdcAmount / Math.pow(10, 6); // USDC has 6 decimal places
-  const solStandard = solAmount / Math.pow(10, 9); // SOL has 9 decimal places
-
-  // Calculate the rate
-  const rateUsdcPerSol = usdcStandard / solStandard;
-
-  return rateUsdcPerSol;
 }

@@ -6,3 +6,5 @@ export {
   BottomSheetTrigger,
   BottomSheetTokenSearch,
 } from "./BottomSheetTokenSearch";
+export { BridgeReviewModal } from "./Modals/BridgeReview";
+export { BridgeStatusModal } from "./Modals/BridgeStatus";
