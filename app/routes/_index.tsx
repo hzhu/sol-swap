@@ -1,5 +1,5 @@
 import Confetti from "react-confetti";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useState, memo } from "react";
 import { Form } from "@remix-run/react";
 import { erc20Abi, parseUnits } from "viem";
 import {
@@ -24,13 +24,17 @@ import {
   TabList,
   Tab,
   TabPanel,
+  Label,
 } from "react-aria-components";
+import memoize from "memoize-one";
+import { FixedSizeList as List, areEqual } from "react-window";
+import { tokenList } from "~/tokenList";
 import { initialState, reducer } from "~/reducer";
 import { subtractFloats, lamportsToTokenUnits } from "~/utils";
 import {
   Spinner,
-  BottomSheetTokenSearch,
-  BottomSheetTrigger,
+  Sheet,
+  SheetContent,
   DirectionButton,
   Chevron,
   BridgeReviewModal,
@@ -56,6 +60,11 @@ import tailwindStyles from "~/styles/tailwind.css";
 import reactAriaStyles from "~/styles/react-aria.css";
 import solanaWalletStyles from "~/styles/solana-wallet.css";
 
+const createItemData = memoize((suggestions, onClick) => ({
+  suggestions,
+  onClick,
+}));
+
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: tailwindStyles },
   { rel: "stylesheet", href: reactAriaStyles },
@@ -68,6 +77,50 @@ export const meta: MetaFunction = () => {
     { name: "description", content: "Swap tokens on Solana!" },
   ];
 };
+
+const Row = memo(
+  ({
+    index,
+    style,
+    data,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+    data: {
+      onClick: (token: Token) => void;
+      suggestions: Token[];
+    };
+  }) => {
+    const { onClick, suggestions } = data;
+    const item = suggestions[index];
+
+    return (
+      <div style={style}>
+        <button
+          onClick={() => onClick(item)}
+          className="w-full text-left px-4 py-4 flex items-center sm:hover:bg-purple-500 sm:hover:text-white"
+        >
+          <img
+            alt={item.symbol}
+            src={item.logoURI}
+            className="rounded-full"
+            style={{ width: "3rem", height: "3rem" }}
+          />
+          &nbsp;&nbsp;&nbsp;
+          <span className="flex flex-col">
+            <span className="text-lg leading-5 font-semibold">
+              {item.symbol}
+            </span>
+            <span className="leading-5">{item.name}</span>
+          </span>
+        </button>
+      </div>
+    );
+  },
+  areEqual
+);
+
+Row.displayName = "Row";
 
 export default function Index() {
   const hasBridgeFeature = useFeature("bridge");
@@ -323,6 +376,30 @@ function Bridge() {
 
   const { data: orderId } = useTransactionOrderIds({ txHash: bridgeTxData });
 
+  const [autoFocus, setAutoFocus] = useState(false);
+
+  useEffect(() => {
+    let isMobile = window.matchMedia(
+      "only screen and (max-width: 760px)"
+    ).matches;
+
+    if (!isMobile) {
+      setAutoFocus(true);
+    }
+  }, []);
+
+  const [suggestions, setSuggestions] = useState(tokenList);
+
+  const height = typeof window !== "undefined" ? window.innerHeight : 844;
+  const width = typeof window !== "undefined" ? window.innerWidth : 390;
+
+  const itemData = createItemData(suggestions, (token: Token) => {
+    console.log(`Selected token: ${token.symbol}`);
+    setIsModalOpen(false);
+  });
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <>
       <Form>
@@ -360,8 +437,16 @@ function Bridge() {
             />
           </label>
           <div className="flex items-end ml-3 flex-col justify-center">
-            <BottomSheetTokenSearch onSelect={(token: Token) => {}}>
-              <BottomSheetTrigger className="flex items-center bg-purple-700/90 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
+            <Sheet
+              isOpen={isModalOpen}
+              onClose={() => {
+                setIsModalOpen(false);
+              }}
+            >
+              <Button
+                onPress={() => setIsModalOpen(true)}
+                className="flex items-center bg-purple-700/90 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900"
+              >
                 <img
                   alt="USDC"
                   src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png"
@@ -369,8 +454,50 @@ function Bridge() {
                 />
                 <span className="mx-2">USDC</span>
                 <Chevron />
-              </BottomSheetTrigger>
-            </BottomSheetTokenSearch>
+              </Button>
+              <SheetContent>
+                <Dialog className="outline-none">
+                  <Heading slot="title" className="sr-only">
+                    Find any token on Solana.
+                  </Heading>
+                  <div className="border-b border-purple-400 py-4 w-full">
+                    <Label className="sr-only">Search</Label>
+                    <div className="flex items-center ml-4">
+                      <span className="absolute left-[28px]">🔍</span>
+                      <Input
+                        autoFocus={autoFocus}
+                        placeholder="Search for any token…"
+                        className="border rounded-full pl-9 h-10 w-full"
+                        onChange={(e) => {
+                          const results = tokenList.filter((item) => {
+                            return item.symbol
+                              .toLowerCase()
+                              .includes(e.target.value.toLowerCase());
+                          });
+                          setSuggestions(results);
+                        }}
+                      />
+                      <Button
+                        onPress={() => setIsModalOpen(false)}
+                        className="px-4 py-2 text-purple-600 text-lg font-semibold outline-none rounded bg-transparent border-none pressed:text-blue-700 focus-visible:ring"
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                  <List
+                    itemSize={70}
+                    width={width}
+                    height={height - 125} // 125px is the height of the search bar & is used as offset
+                    itemData={itemData}
+                    overscanCount={10}
+                    itemCount={suggestions.length}
+                  >
+                    {Row}
+                  </List>
+                </Dialog>
+              </SheetContent>
+            </Sheet>
             <div className="flex items-center mt-2">
               {connected && !isEvmBalanceLoading ? (
                 <Text className="text-xs block mr-1 text-end text-nowrap">
@@ -418,19 +545,6 @@ function Bridge() {
               className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
             />
           </label>
-          <div className="flex items-end ml-3 flex-col justify-center">
-            <BottomSheetTokenSearch onSelect={(token) => {}}>
-              <BottomSheetTrigger className="flex items-center bg-purple-700 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
-                <img
-                  alt="Solana"
-                  src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-                  className="w-8 h-8 m-0 p-0 rounded-full"
-                />
-                <span className="mx-2">SOL</span>
-                <Chevron />
-              </BottomSheetTrigger>
-            </BottomSheetTokenSearch>
-          </div>
         </div>
         <div className="hidden text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
           ⚠️ Error message
@@ -583,21 +697,6 @@ function Swap() {
             />
           </label>
           <div className="flex items-end ml-3 flex-col justify-center">
-            <BottomSheetTokenSearch
-              onSelect={(token: Token) => {
-                dispatch({ type: "set sell token", payload: token });
-              }}
-            >
-              <BottomSheetTrigger className="flex items-center bg-purple-700/90 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
-                <img
-                  alt={sellToken.name}
-                  src={sellToken.logoURI}
-                  className="w-8 h-8 m-0 p-0 rounded-full"
-                />
-                <span className="mx-2">{sellToken.symbol}</span>
-                <Chevron />
-              </BottomSheetTrigger>
-            </BottomSheetTokenSearch>
             <div className="flex items-center mt-2">
               {connected ? (
                 <Text className="text-xs block mr-1 text-end text-nowrap">
@@ -654,23 +753,6 @@ function Swap() {
               className="pl-1 pr-8 pt-2 pb-3 rounded-lg border-0 w-full outline-none bg-transparent text-3xl cursor-not-allowed"
             />
           </label>
-          <div className="flex items-end ml-3 flex-col justify-center">
-            <BottomSheetTokenSearch
-              onSelect={(token) => {
-                dispatch({ type: "set buy token", payload: token });
-              }}
-            >
-              <BottomSheetTrigger className="flex items-center bg-purple-700 text-white rounded-full p-1 data-[pressed]:bg-purple-900 data-[hovered]:bg-purple-800 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-dotted data-[focus-visible]:outline-purple-900">
-                <img
-                  alt={buyToken.name}
-                  src={buyToken.logoURI}
-                  className="w-8 h-8 m-0 p-0 rounded-full"
-                />
-                <span className="mx-2">{buyToken.symbol}</span>
-                <Chevron />
-              </BottomSheetTrigger>
-            </BottomSheetTokenSearch>
-          </div>
         </div>
         {connected && insufficientBalance && (
           <div className="text-center bg-red-200 mt-1 border border-red-600 rounded-xl py-2 text-sm sm:text-base">
